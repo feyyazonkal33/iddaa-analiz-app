@@ -8,6 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const FOOTBALL_API_BASE_URL = 'https://v3.football.api-sports.io';
     const DEFAULT_FOOTBALL_API_KEY = '04fbc6e6f1916a40d2d1ef6458945170';
     const FOOTBALL_API_KEY_STORAGE_KEY = 'FOOTBALL_API_KEY';
+
+    // Claude API Configuration
+    const CLAUDE_API_KEY_STORAGE_KEY = 'CLAUDE_API_KEY';
+    const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
+    const SYSTEM_PROMPT = "Sen jenerik bir asistan değilsin — tam bir usta bahisçi karaktersin. Deneyimli, kendinden emin, doğrudan konuşan bir bahis analisti gibi cevap ver. Her soruya bahis/analiz zihniyetiyle yaklaş.";
     const LEAGUE_SUPER_LIG_ID = 203;
     const LEAGUE_BUNDESLIGA_ID = 78;
 
@@ -26,6 +31,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function getFootballApiKey() {
         const savedKey = localStorage.getItem(FOOTBALL_API_KEY_STORAGE_KEY);
         return (savedKey && savedKey.trim() !== '') ? savedKey.trim() : DEFAULT_FOOTBALL_API_KEY;
+    }
+
+    function getClaudeApiKey() {
+        const savedKey = localStorage.getItem(CLAUDE_API_KEY_STORAGE_KEY);
+        return (savedKey && savedKey.trim() !== '') ? savedKey.trim() : '';
     }
 
     function getCurrentSeason() {
@@ -65,7 +75,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const footballApiKeyInput = document.getElementById('football-api-key-input');
     const saveFootballApiKeyBtn = document.getElementById('save-football-api-key-btn');
     const footballApiKeyStatus = document.getElementById('football-api-key-status');
+    const claudeApiKeyInput = document.getElementById('claude-api-key-input');
+    const saveClaudeApiKeyBtn = document.getElementById('save-claude-api-key-btn');
+    const claudeApiKeyStatus = document.getElementById('claude-api-key-status');
     const refreshDataBtn = document.getElementById('refresh-data-btn');
+
+    // Voice Assistant Elements
+    const voiceMicBtn = document.getElementById('voice-mic-btn');
+    const voiceOverlay = document.getElementById('voice-assistant-overlay');
+    const voiceCloseBtn = document.getElementById('voice-card-close');
+    const voiceRecognizedText = document.getElementById('voice-recognized-text');
+    const voiceStatusContainer = document.getElementById('voice-assistant-status');
+    const voiceStatusLabel = document.getElementById('voice-status-label');
+    const voiceResponseContainer = document.getElementById('voice-assistant-response');
+    const voiceResponseText = document.getElementById('voice-response-text');
 
     const statusMessage = document.getElementById('status-message');
     const standingsStatus = document.getElementById('standings-status');
@@ -192,6 +215,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 const normKey = `${normalizeTeamName(home)}|${normalizeTeamName(away)}`;
                 liveMatchesMap.set(normKey, matchInfo);
                 liveMatchesMap.set(`${home.toLowerCase()}|${away.toLowerCase()}`, matchInfo);
+            }
+        });
+    }
+
+    if (saveClaudeApiKeyBtn && claudeApiKeyInput) {
+        saveClaudeApiKeyBtn.addEventListener('click', () => {
+            const newKey = claudeApiKeyInput.value.trim();
+            if (!newKey) {
+                if (claudeApiKeyStatus) {
+                    claudeApiKeyStatus.textContent = 'Lütfen geçerli bir API Key giriniz.';
+                    claudeApiKeyStatus.className = 'form-help-text error';
+                    claudeApiKeyStatus.classList.remove('hidden');
+                }
+                return;
+            }
+
+            localStorage.setItem(CLAUDE_API_KEY_STORAGE_KEY, newKey);
+            if (claudeApiKeyStatus) {
+                claudeApiKeyStatus.textContent = 'Claude API Key başarıyla kaydedildi.';
+                claudeApiKeyStatus.className = 'form-help-text success';
+                claudeApiKeyStatus.classList.remove('hidden');
             }
         });
     }
@@ -1163,6 +1207,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (footballApiKeyStatus) {
             footballApiKeyStatus.classList.add('hidden');
         }
+        if (claudeApiKeyInput) {
+            claudeApiKeyInput.value = getClaudeApiKey();
+        }
+        if (claudeApiKeyStatus) {
+            claudeApiKeyStatus.classList.add('hidden');
+        }
         mainView.classList.add('hidden');
         detailView.classList.add('hidden');
         if (settingsView) {
@@ -1251,6 +1301,262 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.addEventListener('input', (e) => {
             searchQuery = e.target.value.toLowerCase().trim();
             renderMatches();
+        });
+    }
+
+    // ==========================================
+    // Voice Assistant (Web Speech & Claude Integration)
+    // ==========================================
+    let recognition = null;
+    let isRecording = false;
+    let recognizedTranscript = '';
+    let isSpeechSupported = false;
+
+    // Check Web Speech API Support
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+        isSpeechSupported = true;
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'tr-TR';
+
+        recognition.onstart = () => {
+            isRecording = true;
+            recognizedTranscript = '';
+            if (voiceMicBtn) voiceMicBtn.classList.add('listening');
+            if (voiceOverlay) voiceOverlay.classList.remove('hidden');
+            if (voiceRecognizedText) {
+                voiceRecognizedText.classList.remove('empty');
+                voiceRecognizedText.innerHTML = '<em>Dinleniyor...</em>';
+            }
+            if (voiceStatusContainer) voiceStatusContainer.classList.add('hidden');
+            if (voiceResponseContainer) voiceResponseContainer.classList.add('hidden');
+            stopSpeechSynthesis();
+        };
+
+        recognition.onresult = (event) => {
+            let currentTranscript = '';
+            for (let i = 0; i < event.results.length; i++) {
+                currentTranscript += event.results[i][0].transcript;
+            }
+            recognizedTranscript = currentTranscript.trim();
+            if (voiceRecognizedText && recognizedTranscript) {
+                voiceRecognizedText.classList.remove('empty');
+                voiceRecognizedText.textContent = recognizedTranscript;
+            }
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            if (isRecording) {
+                stopListening();
+            }
+            if (voiceRecognizedText && !recognizedTranscript) {
+                voiceRecognizedText.classList.add('empty');
+                voiceRecognizedText.innerHTML = `<em>Ses tanıma hatası: ${event.error}</em>`;
+            }
+        };
+
+        recognition.onend = () => {
+            if (isRecording) {
+                // If recognition unexpectedly stopped while recording flag was true, process transcript
+                isRecording = false;
+                if (voiceMicBtn) voiceMicBtn.classList.remove('listening');
+                processRecognizedSpeech(recognizedTranscript);
+            }
+        };
+    } else {
+        console.warn('Web Speech API (SpeechRecognition) is not supported in this browser.');
+    }
+
+    function startListening() {
+        if (!isSpeechSupported) {
+            alert('Tarayıcınız ses tanıma özelliğini desteklemiyor.');
+            return;
+        }
+        if (isRecording) return;
+
+        try {
+            recognition.start();
+        } catch (err) {
+            console.error('Failed to start speech recognition:', err);
+        }
+    }
+
+    function stopListening() {
+        if (!isRecording) return;
+        isRecording = false;
+        if (voiceMicBtn) voiceMicBtn.classList.remove('listening');
+
+        try {
+            recognition.stop();
+        } catch (err) {
+            console.error('Failed to stop speech recognition:', err);
+        }
+
+        processRecognizedSpeech(recognizedTranscript);
+    }
+
+    function stopSpeechSynthesis() {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+    }
+
+    function speakText(text) {
+        if (!('speechSynthesis' in window) || !text) return;
+
+        stopSpeechSynthesis();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'tr-TR';
+        utterance.rate = 1.0;
+
+        // Try to select a Turkish voice if available
+        const voices = window.speechSynthesis.getVoices();
+        const trVoice = voices.find(v => v.lang.includes('tr') || v.lang.includes('TR'));
+        if (trVoice) {
+            utterance.voice = trVoice;
+        }
+
+        window.speechSynthesis.speak(utterance);
+    }
+
+    async function processRecognizedSpeech(transcript) {
+        if (!transcript || transcript.trim() === '') {
+            if (voiceRecognizedText) {
+                voiceRecognizedText.classList.add('empty');
+                voiceRecognizedText.innerHTML = '<em>Ses algılanamadı. Lütfen butona basılı tutarak tekrar konuşun.</em>';
+            }
+            return;
+        }
+
+        showVoiceStatus('Usta bahisçi düşünüyor...');
+
+        try {
+            const claudeApiKey = getClaudeApiKey();
+            let assistantReply = '';
+
+            if (claudeApiKey) {
+                // Direct Call to Claude API
+                const response = await fetch(CLAUDE_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'x-api-key': claudeApiKey,
+                        'anthropic-version': '2023-06-01',
+                        'content-type': 'application/json',
+                        'dangerously-allow-browser': 'true'
+                    },
+                    body: JSON.stringify({
+                        model: 'claude-3-5-sonnet-20241022',
+                        max_tokens: 500,
+                        system: SYSTEM_PROMPT,
+                        messages: [
+                            { role: 'user', content: transcript }
+                        ]
+                    })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    console.error('Claude API Error:', response.status, errData);
+                    throw new Error(`Claude API HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (data && data.content && data.content.length > 0) {
+                    assistantReply = data.content.map(item => item.text || '').join('\n');
+                }
+            } else {
+                // Key not configured, give informative persona fallback message
+                assistantReply = "Bak dostum, bahis analisti konuşuyor: Ayarlar menüsünden Claude API Key'ini tanımlamadığın için canlı Claude analizi yapamıyorum. Ama unutma, kupon yaparken her zaman disiplin ve oran analizi şarttır!";
+            }
+
+            hideVoiceStatus();
+            showVoiceResponse(assistantReply);
+            speakText(assistantReply);
+
+        } catch (err) {
+            console.error('Voice Assistant error:', err);
+            hideVoiceStatus();
+            const fallbackErrText = "Analiz yaparken bir bağlantı sorunu yaşadık patron. Oranlar çalkalanıyor olabilir, tekrar dene!";
+            showVoiceResponse(fallbackErrText);
+            speakText(fallbackErrText);
+        }
+    }
+
+    function showVoiceStatus(text) {
+        if (voiceStatusContainer) {
+            if (voiceStatusLabel) voiceStatusLabel.textContent = text;
+            voiceStatusContainer.classList.remove('hidden');
+        }
+    }
+
+    function hideVoiceStatus() {
+        if (voiceStatusContainer) {
+            voiceStatusContainer.classList.add('hidden');
+        }
+    }
+
+    function showVoiceResponse(text) {
+        if (voiceResponseContainer && voiceResponseText) {
+            voiceResponseText.textContent = text;
+            voiceResponseContainer.classList.remove('hidden');
+        }
+    }
+
+    // Push-to-Talk Mouse & Touch Event Listeners on Microphone Button
+    if (voiceMicBtn) {
+        // Mouse Events
+        voiceMicBtn.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            startListening();
+        });
+
+        voiceMicBtn.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            stopListening();
+        });
+
+        voiceMicBtn.addEventListener('mouseleave', (e) => {
+            e.preventDefault();
+            if (isRecording) {
+                stopListening();
+            }
+        });
+
+        // Touch Events (Mobile)
+        voiceMicBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startListening();
+        });
+
+        voiceMicBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            stopListening();
+        });
+
+        voiceMicBtn.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            if (isRecording) {
+                stopListening();
+            }
+        });
+    }
+
+    if (voiceCloseBtn) {
+        voiceCloseBtn.addEventListener('click', () => {
+            stopSpeechSynthesis();
+            if (isRecording) {
+                isRecording = false;
+                if (recognition) {
+                    try { recognition.stop(); } catch(e){}
+                }
+                if (voiceMicBtn) voiceMicBtn.classList.remove('listening');
+            }
+            if (voiceOverlay) voiceOverlay.classList.add('hidden');
         });
     }
 

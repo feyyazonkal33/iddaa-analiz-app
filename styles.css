@@ -990,3 +990,202 @@ body {
     border-radius: 12px;
     border: 1px solid var(--border-color);
 }
+
+/* Voice Assistant Styles */
+.voice-mic-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-yellow), var(--accent-yellow-dark));
+    color: #0b132b;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1000;
+    transition: all 0.2s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+.voice-mic-btn .mic-icon {
+    font-size: 1.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.voice-mic-btn:hover {
+    transform: scale(1.06);
+    box-shadow: 0 8px 25px rgba(255, 193, 7, 0.4);
+}
+
+.voice-mic-btn:active,
+.voice-mic-btn.listening {
+    background: linear-gradient(135deg, var(--accent-red), #c02633);
+    color: #ffffff;
+    transform: scale(1.12);
+    box-shadow: 0 0 25px rgba(230, 57, 70, 0.8);
+}
+
+.mic-pulse-ring {
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    border-radius: 50%;
+    border: 2px solid var(--accent-red);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.voice-mic-btn.listening .mic-pulse-ring {
+    animation: micPulseRing 1.2s infinite ease-out;
+}
+
+@keyframes micPulseRing {
+    0% {
+        transform: scale(1);
+        opacity: 0.9;
+    }
+    100% {
+        transform: scale(1.6);
+        opacity: 0;
+    }
+}
+
+/* Voice Assistant Overlay & Card */
+.voice-assistant-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(6, 10, 23, 0.75);
+    backdrop-filter: blur(4px);
+    z-index: 990;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 16px;
+    animation: fadeIn 0.25s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.voice-assistant-card {
+    width: 100%;
+    max-width: 440px;
+    margin-bottom: 75px; /* Above floating mic button */
+    background-color: var(--bg-card);
+    border: 1px solid var(--accent-yellow);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.voice-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}
+
+.voice-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--accent-yellow);
+}
+
+.voice-avatar-icon {
+    font-size: 1.1rem;
+    color: var(--accent-yellow);
+}
+
+.voice-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+.voice-close-btn:hover {
+    color: #ffffff;
+}
+
+.voice-text-box {
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+
+.voice-text-box.user-speech {
+    background-color: rgba(11, 19, 43, 0.7);
+    border: 1px solid var(--border-color);
+    color: var(--text-light);
+}
+
+.voice-text-box.user-speech.empty {
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 0.82rem;
+}
+
+.voice-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--accent-yellow);
+    background-color: rgba(255, 193, 7, 0.1);
+    border: 1px dashed var(--accent-yellow);
+    padding: 8px 12px;
+    border-radius: 8px;
+}
+
+.voice-text-box.assistant-response {
+    background-color: rgba(28, 37, 65, 0.9);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    color: #ffffff;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.voice-text-box.assistant-response .response-text {
+    white-space: pre-line;
+    font-weight: 500;
+}
