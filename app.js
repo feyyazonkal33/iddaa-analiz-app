@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Clear residual cached standings data on app initialization
+    localStorage.clear();
+
     // API Configuration
     const DEFAULT_API_KEY = '16e175a2a4a2b63d98edeeb7b904df27';
     const API_KEY_STORAGE_KEY = 'ODDS_API_KEY';
@@ -10,10 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const LEAGUE_SUPER_LIG_ID = 203;
     const LEAGUE_BUNDESLIGA_ID = 78;
 
-    const STANDINGS_CACHE_KEY_PREFIX = 'FOOTBALL_STANDINGS_';
-    const LIVE_MATCHES_CACHE_KEY = 'FOOTBALL_LIVE_MATCHES';
-    const LIVE_MATCHES_TIME_KEY = 'FOOTBALL_LIVE_MATCHES_TIME';
-    const LIVE_FETCH_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes rate limit / throttling
+    const LIVE_FETCH_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes interval for live auto-refresh timer
 
     const LEAGUES = [
         { key: 'soccer_turkey_super_league', footballLeagueId: LEAGUE_SUPER_LIG_ID, name: 'Süper Lig', listId: 'super-league-list', sectionId: 'league-super-league' },
@@ -108,22 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/[\s\-_.'"]/g, '');
     }
 
-    // API-Football: Fetch Live Matches with 3-5 Minute Caching / Throttling
-    async function fetchLiveMatches(force = false) {
-        const now = Date.now();
-        const lastFetchTime = parseInt(localStorage.getItem(LIVE_MATCHES_TIME_KEY) || '0', 10);
-        const cachedData = localStorage.getItem(LIVE_MATCHES_CACHE_KEY);
-
-        if (!force && cachedData && (now - lastFetchTime < LIVE_FETCH_INTERVAL_MS)) {
-            try {
-                const parsed = JSON.parse(cachedData);
-                processLiveMatchesData(parsed);
-                return;
-            } catch (e) {
-                console.error('Failed to parse cached live matches:', e);
-            }
-        }
-
+    // API-Football: Fetch Live Matches fresh from API without caching
+    async function fetchLiveMatches() {
         try {
             const url = `${FOOTBALL_API_BASE_URL}/fixtures?live=all`;
             const response = await fetch(url, {
@@ -138,17 +124,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const result = await response.json();
             if (result && result.response) {
-                localStorage.setItem(LIVE_MATCHES_CACHE_KEY, JSON.stringify(result.response));
-                localStorage.setItem(LIVE_MATCHES_TIME_KEY, now.toString());
                 processLiveMatchesData(result.response);
             }
         } catch (err) {
             console.error('Failed to fetch live matches:', err);
-            if (cachedData) {
-                try {
-                    processLiveMatchesData(JSON.parse(cachedData));
-                } catch (e) { }
-            }
         }
     }
 
@@ -160,8 +139,10 @@ document.addEventListener('DOMContentLoaded', () => {
         fixtures.forEach(item => {
             const leagueId = item.league ? item.league.id : null;
             if (leagueId === LEAGUE_SUPER_LIG_ID || leagueId === LEAGUE_BUNDESLIGA_ID) {
-                const home = item.teams ? item.teams.home.name : '';
-                const away = item.teams ? item.teams.away.name : '';
+                const home = item.teams && item.teams.home ? item.teams.home.name : '';
+                const homeId = item.teams && item.teams.home ? item.teams.home.id : null;
+                const away = item.teams && item.teams.away ? item.teams.away.name : '';
+                const awayId = item.teams && item.teams.away ? item.teams.away.id : null;
                 const elapsed = item.fixture && item.fixture.status ? item.fixture.status.elapsed : null;
                 const statusShort = item.fixture && item.fixture.status ? item.fixture.status.short : 'LIVE';
                 const homeGoals = item.goals ? (item.goals.home ?? 0) : 0;
@@ -171,7 +152,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     id: item.fixture ? item.fixture.id : null,
                     leagueId,
                     homeTeam: home,
+                    homeTeamId: homeId,
                     awayTeam: away,
+                    awayTeamId: awayId,
                     elapsed: elapsed ? `${elapsed}'` : statusShort,
                     score: `${homeGoals} - ${awayGoals}`,
                     homeGoals,
@@ -213,60 +196,29 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
-    // API-Football: Fetch Standings with 24-Hour LocalStorage Caching (Quota Protection)
+    // API-Football: Fetch Standings directly for active season 2026 without caching
     async function fetchLeagueStandings(leagueId) {
-        const cacheKeyData = `${STANDINGS_CACHE_KEY_PREFIX}${leagueId}_DATA`;
-        const cacheKeyTime = `${STANDINGS_CACHE_KEY_PREFIX}${leagueId}_TIME`;
-
-        const now = Date.now();
-        const lastFetchTime = parseInt(localStorage.getItem(cacheKeyTime) || '0', 10);
-        const cachedData = localStorage.getItem(cacheKeyData);
-
-        const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
-        // Quota Protection: If cached less than 24 hours ago, use cache
-        if (cachedData && (now - lastFetchTime < ONE_DAY_MS)) {
-            try {
-                return JSON.parse(cachedData);
-            } catch (e) {
-                console.error('Error parsing cached standings:', e);
-            }
-        }
-
-        // Try current season first (e.g. 2024 or 2025)
-        const currentYear = new Date().getFullYear();
-        const seasonsToTry = [currentYear, currentYear - 1];
-
-        for (const season of seasonsToTry) {
-            try {
-                const url = `${FOOTBALL_API_BASE_URL}/standings?league=${leagueId}&season=${season}`;
-                const response = await fetch(url, {
-                    headers: {
-                        'x-apisports-key': FOOTBALL_API_KEY
-                    }
-                });
-
-                if (!response.ok) continue;
-
-                const result = await response.json();
-                if (result && result.response && result.response.length > 0) {
-                    const standingsData = result.response[0].league.standings[0];
-                    if (standingsData && standingsData.length > 0) {
-                        localStorage.setItem(cacheKeyData, JSON.stringify(standingsData));
-                        localStorage.setItem(cacheKeyTime, now.toString());
-                        return standingsData;
-                    }
+        try {
+            const url = `${FOOTBALL_API_BASE_URL}/standings?league=${leagueId}&season=2026`;
+            const response = await fetch(url, {
+                headers: {
+                    'x-apisports-key': FOOTBALL_API_KEY
                 }
-            } catch (e) {
-                console.error(`Error fetching standings for season ${season}:`, e);
-            }
-        }
+            });
 
-        // Fallback to cached data if network failed or season query yielded empty
-        if (cachedData) {
-            try {
-                return JSON.parse(cachedData);
-            } catch (e) { }
+            if (!response.ok) {
+                throw new Error(`API-Football error HTTP ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (result && result.response && result.response.length > 0) {
+                const standingsData = result.response[0].league.standings[0];
+                if (standingsData && standingsData.length > 0) {
+                    return standingsData;
+                }
+            }
+        } catch (e) {
+            console.error(`Error fetching standings for season 2026 league ${leagueId}:`, e);
         }
 
         // Return static fallback standings if API key fails or returns error
@@ -752,10 +704,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function computeLiveStandings(baseStandings, leagueId) {
         if (!baseStandings || !Array.isArray(baseStandings)) return [];
 
-        // Clone base standings data deeply so we don't mutate original cache
+        // Clone base standings data deeply so we don't mutate original
         const standingsCopy = baseStandings.map(row => ({
             rank: row.rank,
             team: {
+                id: row.team ? row.team.id : null,
                 name: row.team ? row.team.name : '',
                 logo: row.team ? row.team.logo : ''
             },
@@ -778,11 +731,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const awayNorm = normalizeTeamName(liveMatch.awayTeam);
 
             const homeRow = standingsCopy.find(r => {
+                if (r.team.id && liveMatch.homeTeamId && r.team.id === liveMatch.homeTeamId) return true;
                 const norm = normalizeTeamName(r.team.name);
                 return norm === homeNorm || norm.includes(homeNorm) || homeNorm.includes(norm);
             });
 
             const awayRow = standingsCopy.find(r => {
+                if (r.team.id && liveMatch.awayTeamId && r.team.id === liveMatch.awayTeamId) return true;
                 const norm = normalizeTeamName(r.team.name);
                 return norm === awayNorm || norm.includes(awayNorm) || awayNorm.includes(norm);
             });
