@@ -728,9 +728,38 @@ body {
     color: var(--text-muted);
 }
 
+.col-av {
+    font-weight: 600;
+    color: var(--text-light);
+}
+
 .col-pts {
     font-weight: 800;
     color: var(--accent-yellow) !important;
+}
+
+.is-live-row {
+    background-color: rgba(230, 57, 70, 0.12);
+}
+
+.standings-live-badge {
+    font-size: 0.55rem;
+    font-weight: 800;
+    background-color: var(--accent-red);
+    color: #ffffff;
+    padding: 1px 4px;
+    border-radius: 4px;
+    margin-left: 4px;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    vertical-align: middle;
+    animation: livePulse 1.5s infinite;
+}
+
+@keyframes livePulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
 }
 
 /* Settings View Styles */

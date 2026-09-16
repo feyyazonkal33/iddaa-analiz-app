@@ -276,25 +276,46 @@ document.addEventListener('DOMContentLoaded', () => {
     function getFallbackStandings(leagueId) {
         if (leagueId === LEAGUE_SUPER_LIG_ID) {
             return [
-                { rank: 1, team: { name: 'Galatasaray' }, all: { played: 26, win: 21, draw: 4, lose: 1 }, points: 67 },
-                { rank: 2, team: { name: 'Fenerbahçe' }, all: { played: 26, win: 19, draw: 5, lose: 2 }, points: 62 },
-                { rank: 3, team: { name: 'Beşiktaş' }, all: { played: 26, win: 14, draw: 6, lose: 6 }, points: 48 },
-                { rank: 4, team: { name: 'Samsunspor' }, all: { played: 26, win: 14, draw: 5, lose: 7 }, points: 47 },
-                { rank: 5, team: { name: 'Eyüpspor' }, all: { played: 26, win: 12, draw: 8, lose: 6 }, points: 44 },
-                { rank: 6, team: { name: 'Trabzonspor' }, all: { played: 26, win: 10, draw: 9, lose: 7 }, points: 39 },
-                { rank: 7, team: { name: 'Göztepe' }, all: { played: 26, win: 10, draw: 7, lose: 9 }, points: 37 },
-                { rank: 8, team: { name: 'İstanbul Başakşehir' }, all: { played: 26, win: 10, draw: 6, lose: 10 }, points: 36 }
+                { rank: 1, team: { name: 'Galatasaray' }, all: { played: 26, win: 21, draw: 4, lose: 1 }, goalsDiff: 38, points: 67 },
+                { rank: 2, team: { name: 'Fenerbahçe' }, all: { played: 26, win: 19, draw: 5, lose: 2 }, goalsDiff: 35, points: 62 },
+                { rank: 3, team: { name: 'Beşiktaş' }, all: { played: 26, win: 14, draw: 6, lose: 6 }, goalsDiff: 18, points: 48 },
+                { rank: 4, team: { name: 'Samsunspor' }, all: { played: 26, win: 14, draw: 5, lose: 7 }, goalsDiff: 12, points: 47 },
+                { rank: 5, team: { name: 'Eyüpspor' }, all: { played: 26, win: 12, draw: 8, lose: 6 }, goalsDiff: 8, points: 44 },
+                { rank: 6, team: { name: 'Trabzonspor' }, all: { played: 26, win: 10, draw: 9, lose: 7 }, goalsDiff: 6, points: 39 },
+                { rank: 7, team: { name: 'Göztepe' }, all: { played: 26, win: 10, draw: 7, lose: 9 }, goalsDiff: 4, points: 37 },
+                { rank: 8, team: { name: 'İstanbul Başakşehir' }, all: { played: 26, win: 10, draw: 6, lose: 10 }, goalsDiff: 2, points: 36 },
+                { rank: 9, team: { name: 'Sivasspor' }, all: { played: 26, win: 9, draw: 8, lose: 9 }, goalsDiff: -1, points: 35 },
+                { rank: 10, team: { name: 'Kasımpaşa' }, all: { played: 26, win: 8, draw: 10, lose: 8 }, goalsDiff: 0, points: 34 },
+                { rank: 11, team: { name: 'Konyaspor' }, all: { played: 26, win: 8, draw: 7, lose: 11 }, goalsDiff: -5, points: 31 },
+                { rank: 12, team: { name: 'Antalyaspor' }, all: { played: 26, win: 8, draw: 6, lose: 12 }, goalsDiff: -8, points: 30 },
+                { rank: 13, team: { name: 'Alanyaspor' }, all: { played: 26, win: 7, draw: 8, lose: 11 }, goalsDiff: -7, points: 29 },
+                { rank: 14, team: { name: 'Gaziantep FK' }, all: { played: 26, win: 7, draw: 7, lose: 12 }, goalsDiff: -9, points: 28 },
+                { rank: 15, team: { name: 'Çaykur Rizespor' }, all: { played: 26, win: 7, draw: 6, lose: 13 }, goalsDiff: -14, points: 27 },
+                { rank: 16, team: { name: 'Kayserispor' }, all: { played: 26, win: 6, draw: 8, lose: 12 }, goalsDiff: -15, points: 26 },
+                { rank: 17, team: { name: 'Bodrum FK' }, all: { played: 26, win: 6, draw: 6, lose: 14 }, goalsDiff: -16, points: 24 },
+                { rank: 18, team: { name: 'Hatayspor' }, all: { played: 26, win: 3, draw: 10, lose: 13 }, goalsDiff: -20, points: 19 },
+                { rank: 19, team: { name: 'Adana Demirspor' }, all: { played: 26, win: 2, draw: 3, lose: 21 }, goalsDiff: -35, points: 9 }
             ];
         } else if (leagueId === LEAGUE_BUNDESLIGA_ID) {
             return [
-                { rank: 1, team: { name: 'Bayern München' }, all: { played: 25, win: 19, draw: 4, lose: 2 }, points: 61 },
-                { rank: 2, team: { name: 'Bayer Leverkusen' }, all: { played: 25, win: 16, draw: 5, lose: 4 }, points: 53 },
-                { rank: 3, team: { name: 'Eintracht Frankfurt' }, all: { played: 25, win: 14, draw: 6, lose: 5 }, points: 48 },
-                { rank: 4, team: { name: 'RB Leipzig' }, all: { played: 25, win: 13, draw: 6, lose: 6 }, points: 45 },
-                { rank: 5, team: { name: 'Borussia Dortmund' }, all: { played: 25, win: 12, draw: 5, lose: 8 }, points: 41 },
-                { rank: 6, team: { name: 'FSV Mainz 05' }, all: { played: 25, win: 11, draw: 5, lose: 9 }, points: 38 },
-                { rank: 7, team: { name: 'VfB Stuttgart' }, all: { played: 25, win: 10, draw: 7, lose: 8 }, points: 37 },
-                { rank: 8, team: { name: 'SC Freiburg' }, all: { played: 25, win: 10, draw: 6, lose: 9 }, points: 36 }
+                { rank: 1, team: { name: 'Bayern München' }, all: { played: 25, win: 19, draw: 4, lose: 2 }, goalsDiff: 48, points: 61 },
+                { rank: 2, team: { name: 'Bayer Leverkusen' }, all: { played: 25, win: 16, draw: 5, lose: 4 }, goalsDiff: 24, points: 53 },
+                { rank: 3, team: { name: 'Eintracht Frankfurt' }, all: { played: 25, win: 14, draw: 6, lose: 5 }, goalsDiff: 18, points: 48 },
+                { rank: 4, team: { name: 'RB Leipzig' }, all: { played: 25, win: 13, draw: 6, lose: 6 }, goalsDiff: 16, points: 45 },
+                { rank: 5, team: { name: 'Borussia Dortmund' }, all: { played: 25, win: 12, draw: 5, lose: 8 }, goalsDiff: 12, points: 41 },
+                { rank: 6, team: { name: 'FSV Mainz 05' }, all: { played: 25, win: 11, draw: 5, lose: 9 }, goalsDiff: 7, points: 38 },
+                { rank: 7, team: { name: 'VfB Stuttgart' }, all: { played: 25, win: 10, draw: 7, lose: 8 }, goalsDiff: 6, points: 37 },
+                { rank: 8, team: { name: 'SC Freiburg' }, all: { played: 25, win: 10, draw: 6, lose: 9 }, goalsDiff: 1, points: 36 },
+                { rank: 9, team: { name: 'Werder Bremen' }, all: { played: 25, win: 9, draw: 6, lose: 10 }, goalsDiff: -3, points: 33 },
+                { rank: 10, team: { name: 'Borussia Mönchengladbach' }, all: { played: 25, win: 9, draw: 5, lose: 11 }, goalsDiff: -2, points: 32 },
+                { rank: 11, team: { name: 'VfL Wolfsburg' }, all: { played: 25, win: 8, draw: 7, lose: 10 }, goalsDiff: 0, points: 31 },
+                { rank: 12, team: { name: 'FC Augsburg' }, all: { played: 25, win: 8, draw: 5, lose: 12 }, goalsDiff: -11, points: 29 },
+                { rank: 13, team: { name: 'Union Berlin' }, all: { played: 25, win: 6, draw: 8, lose: 11 }, goalsDiff: -10, points: 26 },
+                { rank: 14, team: { name: 'FC St. Pauli' }, all: { played: 25, win: 7, draw: 4, lose: 14 }, goalsDiff: -12, points: 25 },
+                { rank: 15, team: { name: 'TSG 1899 Hoffenheim' }, all: { played: 25, win: 5, draw: 7, lose: 13 }, goalsDiff: -15, points: 22 },
+                { rank: 16, team: { name: '1. FC Heidenheim' }, all: { played: 25, win: 5, draw: 5, lose: 15 }, goalsDiff: -19, points: 20 },
+                { rank: 17, team: { name: 'VfL Bochum' }, all: { played: 25, win: 4, draw: 5, lose: 16 }, goalsDiff: -27, points: 17 },
+                { rank: 18, team: { name: 'Holstein Kiel' }, all: { played: 25, win: 3, draw: 4, lose: 18 }, goalsDiff: -32, points: 13 }
             ];
         }
         return null;
@@ -727,6 +748,110 @@ document.addEventListener('DOMContentLoaded', () => {
         detailMarkets.appendChild(card);
     }
 
+    // Calculate Live Standings
+    function computeLiveStandings(baseStandings, leagueId) {
+        if (!baseStandings || !Array.isArray(baseStandings)) return [];
+
+        // Clone base standings data deeply so we don't mutate original cache
+        const standingsCopy = baseStandings.map(row => ({
+            rank: row.rank,
+            team: {
+                name: row.team ? row.team.name : '',
+                logo: row.team ? row.team.logo : ''
+            },
+            all: {
+                played: row.all ? (row.all.played ?? 0) : 0,
+                win: row.all ? (row.all.win ?? 0) : 0,
+                draw: row.all ? (row.all.draw ?? 0) : 0,
+                lose: row.all ? (row.all.lose ?? 0) : 0
+            },
+            goalsDiff: row.goalsDiff ?? (row.all && row.all.goals ? (row.all.goals.for - row.all.goals.against) : 0),
+            points: row.points ?? 0,
+            isLive: false
+        }));
+
+        // Check active live matches for this leagueId
+        liveMatchesMap.forEach(liveMatch => {
+            if (liveMatch.leagueId !== leagueId) return;
+
+            const homeNorm = normalizeTeamName(liveMatch.homeTeam);
+            const awayNorm = normalizeTeamName(liveMatch.awayTeam);
+
+            const homeRow = standingsCopy.find(r => {
+                const norm = normalizeTeamName(r.team.name);
+                return norm === homeNorm || norm.includes(homeNorm) || homeNorm.includes(norm);
+            });
+
+            const awayRow = standingsCopy.find(r => {
+                const norm = normalizeTeamName(r.team.name);
+                return norm === awayNorm || norm.includes(awayNorm) || awayNorm.includes(norm);
+            });
+
+            if (homeRow) {
+                homeRow.all.played += 1;
+                homeRow.isLive = true;
+            }
+
+            if (awayRow) {
+                awayRow.all.played += 1;
+                awayRow.isLive = true;
+            }
+
+            const hG = liveMatch.homeGoals;
+            const aG = liveMatch.awayGoals;
+            const diff = hG - aG;
+
+            if (hG > aG) {
+                // Home winning
+                if (homeRow) {
+                    homeRow.all.win += 1;
+                    homeRow.points += 3;
+                    homeRow.goalsDiff += diff;
+                }
+                if (awayRow) {
+                    awayRow.all.lose += 1;
+                    awayRow.goalsDiff -= diff;
+                }
+            } else if (aG > hG) {
+                // Away winning
+                if (awayRow) {
+                    awayRow.all.win += 1;
+                    awayRow.points += 3;
+                    awayRow.goalsDiff += (-diff);
+                }
+                if (homeRow) {
+                    homeRow.all.lose += 1;
+                    homeRow.goalsDiff -= (-diff);
+                }
+            } else {
+                // Draw
+                if (homeRow) {
+                    homeRow.all.draw += 1;
+                    homeRow.points += 1;
+                }
+                if (awayRow) {
+                    awayRow.all.draw += 1;
+                    awayRow.points += 1;
+                }
+            }
+        });
+
+        // Re-sort standings by Points (descending) and Goal Difference (descending)
+        standingsCopy.sort((a, b) => {
+            if (b.points !== a.points) {
+                return b.points - a.points;
+            }
+            return b.goalsDiff - a.goalsDiff;
+        });
+
+        // Re-assign rank numbers dynamically based on sorted position
+        standingsCopy.forEach((row, index) => {
+            row.rank = index + 1;
+        });
+
+        return standingsCopy;
+    }
+
     // Open Standings View
     async function openStandingsView(leagueId, leagueName) {
         if (standingsTitle) {
@@ -746,15 +871,19 @@ document.addEventListener('DOMContentLoaded', () => {
         showStandingsStatus('Puan durumu yükleniyor...', 'loading');
 
         try {
-            const standings = await fetchLeagueStandings(leagueId);
+            // Fetch live matches first to get current live score state
+            await fetchLiveMatches();
+
+            const baseStandings = await fetchLeagueStandings(leagueId);
             hideStandingsStatus();
 
-            if (!standings || standings.length === 0) {
+            if (!baseStandings || baseStandings.length === 0) {
                 showStandingsStatus('Puan durumu verisi bulunamadı.', 'error');
                 return;
             }
 
-            renderStandingsTable(standings);
+            const liveStandings = computeLiveStandings(baseStandings, leagueId);
+            renderStandingsTable(liveStandings);
         } catch (err) {
             console.error('Puan durumu hatası:', err);
             showStandingsStatus('Puan durumu yüklenirken bir hata oluştu.', 'error');
@@ -767,6 +896,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         standings.forEach(row => {
             const tr = document.createElement('tr');
+            if (row.isLive) {
+                tr.classList.add('is-live-row');
+            }
+
             const rank = row.rank || '-';
             const teamName = row.team ? row.team.name : '-';
             const logo = row.team ? row.team.logo : '';
@@ -774,18 +907,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const win = row.all ? row.all.win : 0;
             const draw = row.all ? row.all.draw : 0;
             const lose = row.all ? row.all.lose : 0;
+            const goalsDiff = row.goalsDiff ?? 0;
+            const diffFormatted = goalsDiff > 0 ? `+${goalsDiff}` : `${goalsDiff}`;
             const points = row.points ?? 0;
 
             tr.innerHTML = `
                 <td class="col-rank">${rank}</td>
                 <td class="col-team">
                     ${logo ? `<img src="${logo}" alt="" class="team-logo-small">` : ''}
-                    <span class="team-title-str">${teamName}</span>
+                    <span class="team-title-str" title="${teamName}">${teamName}</span>
+                    ${row.isLive ? '<span class="standings-live-badge">CANLI</span>' : ''}
                 </td>
                 <td class="col-num">${played}</td>
                 <td class="col-num">${win}</td>
                 <td class="col-num">${draw}</td>
                 <td class="col-num">${lose}</td>
+                <td class="col-num col-av">${diffFormatted}</td>
                 <td class="col-num col-pts">${points}</td>
             `;
 
