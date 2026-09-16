@@ -78,6 +78,20 @@ body {
 
 .logo-icon {
     font-size: 1.4rem;
+    display: inline-block;
+    animation: logoGlow 3s ease-in-out infinite;
+    will-change: transform, filter;
+}
+
+@keyframes logoGlow {
+    0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 2px rgba(255, 204, 0, 0.4));
+    }
+    50% {
+        transform: scale(1.08);
+        filter: drop-shadow(0 0 8px rgba(255, 204, 0, 0.85));
+    }
 }
 
 .app-title {
@@ -106,13 +120,15 @@ body {
     gap: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
+    animation: liveBadgeGlow 2s ease-in-out infinite;
+    will-change: box-shadow;
 }
 
 .live-btn:active, .live-btn.active {
     transform: scale(0.95);
     background-color: var(--accent-red);
     color: white;
-    box-shadow: 0 0 10px rgba(230, 57, 70, 0.5);
+    box-shadow: 0 0 12px rgba(230, 57, 70, 0.7);
 }
 
 .live-dot {
@@ -122,6 +138,30 @@ body {
     border-radius: 50%;
     display: inline-block;
     box-shadow: 0 0 8px var(--accent-red);
+    animation: pulseDot 1.5s ease-in-out infinite;
+    will-change: transform, opacity, box-shadow;
+}
+
+@keyframes pulseDot {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+        box-shadow: 0 0 4px var(--accent-red);
+    }
+    50% {
+        transform: scale(1.4);
+        opacity: 0.7;
+        box-shadow: 0 0 12px var(--accent-red);
+    }
+}
+
+@keyframes liveBadgeGlow {
+    0%, 100% {
+        box-shadow: 0 0 4px rgba(230, 57, 70, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 12px rgba(230, 57, 70, 0.8);
+    }
 }
 
 .icon-btn {
@@ -256,11 +296,25 @@ body {
     flex: 1;
 }
 
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* League Section */
 .league-section {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: transform, opacity;
 }
 
 .league-header {
@@ -336,7 +390,16 @@ body {
     justify-content: space-between;
     cursor: pointer;
     transition: background-color 0.2s ease, transform 0.1s ease;
+    animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: transform, opacity;
 }
+
+.match-list .match-card:nth-child(1) { animation-delay: 0.05s; }
+.match-list .match-card:nth-child(2) { animation-delay: 0.10s; }
+.match-list .match-card:nth-child(3) { animation-delay: 0.15s; }
+.match-list .match-card:nth-child(4) { animation-delay: 0.20s; }
+.match-list .match-card:nth-child(5) { animation-delay: 0.25s; }
+.match-list .match-card:nth-child(n+6) { animation-delay: 0.30s; }
 
 .match-card:active {
     background-color: var(--bg-card-hover);
@@ -362,6 +425,8 @@ body {
     padding: 1px 5px;
     border-radius: 4px;
     letter-spacing: 0.5px;
+    animation: liveBadgeGlow 2s ease-in-out infinite;
+    will-change: box-shadow;
 }
 
 .live-score-highlight {
@@ -482,6 +547,8 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 12px;
+    animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: transform, opacity;
 }
 
 .detail-league-tag {
@@ -561,7 +628,13 @@ body {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: transform, opacity;
 }
+
+.detail-markets-container .market-card:nth-child(1) { animation-delay: 0.08s; }
+.detail-markets-container .market-card:nth-child(2) { animation-delay: 0.16s; }
+.detail-markets-container .market-card:nth-child(3) { animation-delay: 0.24s; }
 
 .market-title {
     font-size: 0.9rem;
@@ -667,7 +740,26 @@ body {
     overflow-x: auto;
     overflow-y: auto;
     max-height: calc(100vh - 120px);
+    animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: transform, opacity;
 }
+
+.standings-table tbody tr {
+    animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: transform, opacity;
+}
+
+.standings-table tbody tr:nth-child(1) { animation-delay: 0.03s; }
+.standings-table tbody tr:nth-child(2) { animation-delay: 0.06s; }
+.standings-table tbody tr:nth-child(3) { animation-delay: 0.09s; }
+.standings-table tbody tr:nth-child(4) { animation-delay: 0.12s; }
+.standings-table tbody tr:nth-child(5) { animation-delay: 0.15s; }
+.standings-table tbody tr:nth-child(6) { animation-delay: 0.18s; }
+.standings-table tbody tr:nth-child(7) { animation-delay: 0.21s; }
+.standings-table tbody tr:nth-child(8) { animation-delay: 0.24s; }
+.standings-table tbody tr:nth-child(9) { animation-delay: 0.27s; }
+.standings-table tbody tr:nth-child(10) { animation-delay: 0.30s; }
+.standings-table tbody tr:nth-child(n+11) { animation-delay: 0.33s; }
 
 .standings-table {
     width: 100%;
@@ -755,7 +847,8 @@ body {
     letter-spacing: 0.5px;
     display: inline-block;
     vertical-align: middle;
-    animation: livePulse 1.5s infinite;
+    animation: livePulse 1.5s infinite, liveBadgeGlow 2s ease-in-out infinite;
+    will-change: opacity, box-shadow;
 }
 
 @keyframes livePulse {
