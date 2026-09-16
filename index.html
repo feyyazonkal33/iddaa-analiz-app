@@ -118,6 +118,41 @@
                 </div>
             </main>
         </div>
+
+        <!-- Settings View / Modal -->
+        <div id="settings-view" class="view hidden">
+            <header class="app-header settings-header">
+                <button id="settings-back-btn" class="back-btn" aria-label="Geri Dön / Kapat">
+                    ← Geri
+                </button>
+                <h1 class="app-title">Ayarlar</h1>
+                <div style="width: 40px;"></div> <!-- spacer for header balance -->
+            </header>
+            <main class="settings-content">
+                <div class="settings-card">
+                    <h2 class="settings-card-title">API Ayarları</h2>
+                    <div class="form-group">
+                        <label for="api-key-input" class="form-label">The Odds API Key</label>
+                        <div class="input-with-button">
+                            <input type="text" id="api-key-input" class="form-input" placeholder="API Key giriniz..." autocomplete="off">
+                            <button id="save-api-key-btn" class="btn btn-primary">Kaydet</button>
+                        </div>
+                        <span id="api-key-status" class="form-help-text hidden"></span>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h2 class="settings-card-title">Veri Yönetimi</h2>
+                    <button id="refresh-data-btn" class="btn btn-secondary full-width">
+                        🔄 Verileri Yenile
+                    </button>
+                </div>
+
+                <div class="settings-footer">
+                    <span class="version-tag">v1.0</span>
+                </div>
+            </main>
+        </div>
     </div>
 
     <script src="app.js"></script>

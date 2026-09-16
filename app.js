@@ -1,11 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
     // API Configuration
-    const API_KEY = '16e175a2a4a2b63d98edeeb7b904df27';
+    const DEFAULT_API_KEY = '16e175a2a4a2b63d98edeeb7b904df27';
+    const API_KEY_STORAGE_KEY = 'ODDS_API_KEY';
     const BASE_URL = 'https://api.the-odds-api.com/v4';
     const LEAGUES = [
         { key: 'soccer_turkey_super_league', name: 'Süper Lig', listId: 'super-league-list', sectionId: 'league-super-league' },
         { key: 'soccer_germany_bundesliga', name: 'Bundesliga', listId: 'bundesliga-list', sectionId: 'league-bundesliga' }
     ];
+
+    function getApiKey() {
+        const savedKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+        return (savedKey && savedKey.trim() !== '') ? savedKey.trim() : DEFAULT_API_KEY;
+    }
 
     // App State
     let matchesData = []; // Store fetched matches across leagues
@@ -15,7 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const mainView = document.getElementById('main-view');
     const detailView = document.getElementById('detail-view');
+    const settingsView = document.getElementById('settings-view');
     const backBtn = document.getElementById('back-btn');
+    const settingsBtn = document.querySelector('.settings-btn');
+    const settingsBackBtn = document.getElementById('settings-back-btn');
+    const apiKeyInput = document.getElementById('api-key-input');
+    const saveApiKeyBtn = document.getElementById('save-api-key-btn');
+    const apiKeyStatus = document.getElementById('api-key-status');
+    const refreshDataBtn = document.getElementById('refresh-data-btn');
+
     const statusMessage = document.getElementById('status-message');
     const searchInput = document.getElementById('match-search');
     const dateTabs = document.querySelectorAll('.date-tab');
@@ -68,7 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fetch Matches for a league (markets=h2h,totals supported by list endpoint)
     async function fetchLeagueMatches(leagueKey) {
-        const url = `${BASE_URL}/sports/${leagueKey}/odds/?apiKey=${API_KEY}&regions=eu&markets=h2h,totals&oddsFormat=decimal`;
+        const currentKey = getApiKey();
+        const url = `${BASE_URL}/sports/${leagueKey}/odds/?apiKey=${currentKey}&regions=eu&markets=h2h,totals&oddsFormat=decimal`;
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`API error HTTP ${response.status}`);
@@ -79,7 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch full event odds including BTTS when detail view is opened or per event
     async function fetchEventDetails(sportKey, eventId) {
         try {
-            const url = `${BASE_URL}/sports/${sportKey}/events/${eventId}/odds?apiKey=${API_KEY}&regions=eu&markets=h2h,totals,btts&oddsFormat=decimal`;
+            const currentKey = getApiKey();
+            const url = `${BASE_URL}/sports/${sportKey}/events/${eventId}/odds?apiKey=${currentKey}&regions=eu&markets=h2h,totals,btts&oddsFormat=decimal`;
             const response = await fetch(url);
             if (!response.ok) return null;
             return await response.json();
@@ -434,12 +450,72 @@ document.addEventListener('DOMContentLoaded', () => {
         detailMarkets.appendChild(card);
     }
 
-    // Navigation Back to Main View
+    // Navigation Back to Main View from Detail
     if (backBtn) {
         backBtn.addEventListener('click', () => {
             detailView.classList.add('hidden');
             mainView.classList.remove('hidden');
             window.scrollTo(0, 0);
+        });
+    }
+
+    // Settings Navigation & Logic
+    function openSettings() {
+        if (apiKeyInput) {
+            apiKeyInput.value = getApiKey();
+        }
+        if (apiKeyStatus) {
+            apiKeyStatus.classList.add('hidden');
+        }
+        mainView.classList.add('hidden');
+        detailView.classList.add('hidden');
+        if (settingsView) {
+            settingsView.classList.remove('hidden');
+        }
+        window.scrollTo(0, 0);
+    }
+
+    function closeSettings() {
+        if (settingsView) {
+            settingsView.classList.add('hidden');
+        }
+        mainView.classList.remove('hidden');
+        window.scrollTo(0, 0);
+    }
+
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', openSettings);
+    }
+
+    if (settingsBackBtn) {
+        settingsBackBtn.addEventListener('click', closeSettings);
+    }
+
+    if (saveApiKeyBtn && apiKeyInput) {
+        saveApiKeyBtn.addEventListener('click', () => {
+            const newKey = apiKeyInput.value.trim();
+            if (!newKey) {
+                if (apiKeyStatus) {
+                    apiKeyStatus.textContent = 'Lütfen geçerli bir API Key giriniz.';
+                    apiKeyStatus.className = 'form-help-text error';
+                    apiKeyStatus.classList.remove('hidden');
+                }
+                return;
+            }
+
+            localStorage.setItem(API_KEY_STORAGE_KEY, newKey);
+            if (apiKeyStatus) {
+                apiKeyStatus.textContent = 'API Key başarıyla kaydedildi.';
+                apiKeyStatus.className = 'form-help-text success';
+                apiKeyStatus.classList.remove('hidden');
+            }
+        });
+    }
+
+    if (refreshDataBtn) {
+        refreshDataBtn.addEventListener('click', () => {
+            closeSettings();
+            loadAllMatches();
         });
     }
 
