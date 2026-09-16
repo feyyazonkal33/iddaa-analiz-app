@@ -41,9 +41,10 @@
             <div class="nav-controls">
                 <!-- Date Tabs -->
                 <div class="date-tabs">
-                    <button class="date-tab">Dün</button>
-                    <button class="date-tab active">Bugün</button>
-                    <button class="date-tab">Yarın</button>
+                    <button class="date-tab" data-date-filter="yesterday">Dün</button>
+                    <button class="date-tab active" data-date-filter="today">Bugün</button>
+                    <button class="date-tab" data-date-filter="tomorrow">Yarın</button>
+                    <button class="date-tab" data-date-filter="all">Tümü</button>
                 </div>
 
                 <!-- Search Input -->
@@ -58,129 +59,33 @@
 
             <!-- Content Area -->
             <main class="matches-content">
+                <div id="status-message" class="status-message hidden"></div>
+
                 <!-- Süper Lig Section -->
-                <section class="league-section" data-league="Süper Lig">
+                <section class="league-section" id="league-super-league" data-league="Süper Lig">
                     <div class="league-header">
                         <span class="league-flag">🇹🇷</span>
                         <h2 class="league-title">Süper Lig</h2>
                     </div>
-                    <div class="match-list">
-                        <div class="match-card" data-match-id="1" data-home="Galatasaray" data-away="Fenerbahçe">
-                            <div class="match-time-status">
-                                <span class="match-time">19:00</span>
-                                <span class="match-badge">MS</span>
-                            </div>
-                            <div class="match-teams">
-                                <div class="team home-team">
-                                    <span class="team-name">Galatasaray</span>
-                                </div>
-                                <div class="match-vs">VS</div>
-                                <div class="team away-team">
-                                    <span class="team-name">Fenerbahçe</span>
-                                </div>
-                            </div>
-                            <div class="match-arrow">›</div>
-                        </div>
-
-                        <div class="match-card" data-match-id="2" data-home="Beşiktaş" data-away="Trabzonspor">
-                            <div class="match-time-status">
-                                <span class="match-time">21:30</span>
-                                <span class="match-badge">Yakında</span>
-                            </div>
-                            <div class="match-teams">
-                                <div class="team home-team">
-                                    <span class="team-name">Beşiktaş</span>
-                                </div>
-                                <div class="match-vs">VS</div>
-                                <div class="team away-team">
-                                    <span class="team-name">Trabzonspor</span>
-                                </div>
-                            </div>
-                            <div class="match-arrow">›</div>
-                        </div>
-
-                        <div class="match-card" data-match-id="3" data-home="Başakşehir" data-away="Adana Demirspor">
-                            <div class="match-time-status">
-                                <span class="match-time">16:00</span>
-                                <span class="match-badge">MS</span>
-                            </div>
-                            <div class="match-teams">
-                                <div class="team home-team">
-                                    <span class="team-name">Başakşehir</span>
-                                </div>
-                                <div class="match-vs">VS</div>
-                                <div class="team away-team">
-                                    <span class="team-name">Adana Demirspor</span>
-                                </div>
-                            </div>
-                            <div class="match-arrow">›</div>
-                        </div>
+                    <div class="match-list" id="super-league-list">
+                        <!-- Dynamic match cards loaded here -->
                     </div>
                 </section>
 
                 <!-- Bundesliga Section -->
-                <section class="league-section" data-league="Bundesliga">
+                <section class="league-section" id="league-bundesliga" data-league="Bundesliga">
                     <div class="league-header">
                         <span class="league-flag">🇩🇪</span>
                         <h2 class="league-title">Bundesliga</h2>
                     </div>
-                    <div class="match-list">
-                        <div class="match-card" data-match-id="4" data-home="Bayern München" data-away="Borussia Dortmund">
-                            <div class="match-time-status">
-                                <span class="match-time">18:30</span>
-                                <span class="match-badge">MS</span>
-                            </div>
-                            <div class="match-teams">
-                                <div class="team home-team">
-                                    <span class="team-name">Bayern München</span>
-                                </div>
-                                <div class="match-vs">VS</div>
-                                <div class="team away-team">
-                                    <span class="team-name">Borussia Dortmund</span>
-                                </div>
-                            </div>
-                            <div class="match-arrow">›</div>
-                        </div>
-
-                        <div class="match-card" data-match-id="5" data-home="RB Leipzig" data-away="Bayer Leverkusen">
-                            <div class="match-time-status">
-                                <span class="match-time">20:30</span>
-                                <span class="match-badge">Yakında</span>
-                            </div>
-                            <div class="match-teams">
-                                <div class="team home-team">
-                                    <span class="team-name">RB Leipzig</span>
-                                </div>
-                                <div class="match-vs">VS</div>
-                                <div class="team away-team">
-                                    <span class="team-name">Bayer Leverkusen</span>
-                                </div>
-                            </div>
-                            <div class="match-arrow">›</div>
-                        </div>
-
-                        <div class="match-card" data-match-id="6" data-home="Eintracht Frankfurt" data-away="VfB Stuttgart">
-                            <div class="match-time-status">
-                                <span class="match-time">15:30</span>
-                                <span class="match-badge">MS</span>
-                            </div>
-                            <div class="match-teams">
-                                <div class="team home-team">
-                                    <span class="team-name">Eintracht Frankfurt</span>
-                                </div>
-                                <div class="match-vs">VS</div>
-                                <div class="team away-team">
-                                    <span class="team-name">VfB Stuttgart</span>
-                                </div>
-                            </div>
-                            <div class="match-arrow">›</div>
-                        </div>
+                    <div class="match-list" id="bundesliga-list">
+                        <!-- Dynamic match cards loaded here -->
                     </div>
                 </section>
             </main>
         </div>
 
-        <!-- Match Detail View Placeholder -->
+        <!-- Match Detail View -->
         <div id="detail-view" class="view hidden">
             <header class="app-header detail-header">
                 <button id="back-btn" class="back-btn" aria-label="Geri Dön">
@@ -190,15 +95,26 @@
                 <div style="width: 40px;"></div> <!-- spacer for header balance -->
             </header>
             <main class="detail-content">
-                <div class="detail-placeholder-card">
+                <div class="detail-banner-card">
+                    <div class="detail-league-tag" id="detail-league-tag">Süper Lig</div>
                     <div id="detail-teams-headline" class="detail-headline">
-                        <span id="detail-home-team">Ev Sahibi</span>
+                        <div class="team-block home-block">
+                            <span id="detail-home-team" class="detail-team-name">Ev Sahibi</span>
+                        </div>
                         <span class="vs-badge">VS</span>
-                        <span id="detail-away-team">Deplasman</span>
+                        <div class="team-block away-block">
+                            <span id="detail-away-team" class="detail-team-name">Deplasman</span>
+                        </div>
                     </div>
-                    <div class="detail-info">
-                        <p class="placeholder-text">Detaylı analiz verileri ve istatistikler sonraki aşamada eklenecektir.</p>
+                    <div class="detail-meta">
+                        <span id="detail-match-time">--:--</span>
+                        <span class="bullet-dot">•</span>
+                        <span id="detail-match-date">--.--.----</span>
                     </div>
+                </div>
+
+                <div id="detail-markets" class="detail-markets-container">
+                    <!-- Dynamic markets loaded here -->
                 </div>
             </main>
         </div>

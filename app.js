@@ -1,30 +1,440 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // API Configuration
+    const API_KEY = '16e175a2a4a2b63d98edeeb7b904df27';
+    const BASE_URL = 'https://api.the-odds-api.com/v4';
+    const LEAGUES = [
+        { key: 'soccer_turkey_super_league', name: 'Süper Lig', listId: 'super-league-list', sectionId: 'league-super-league' },
+        { key: 'soccer_germany_bundesliga', name: 'Bundesliga', listId: 'bundesliga-list', sectionId: 'league-bundesliga' }
+    ];
+
+    // App State
+    let matchesData = []; // Store fetched matches across leagues
+    let currentFilterDate = 'today';
+    let searchQuery = '';
+
     // DOM Elements
     const mainView = document.getElementById('main-view');
     const detailView = document.getElementById('detail-view');
     const backBtn = document.getElementById('back-btn');
-    const matchCards = document.querySelectorAll('.match-card');
+    const statusMessage = document.getElementById('status-message');
+    const searchInput = document.getElementById('match-search');
+    const dateTabs = document.querySelectorAll('.date-tab');
+
+    // Detail View Elements
+    const detailLeagueTag = document.getElementById('detail-league-tag');
     const detailHomeTeam = document.getElementById('detail-home-team');
     const detailAwayTeam = document.getElementById('detail-away-team');
-    const dateTabs = document.querySelectorAll('.date-tab');
-    const searchInput = document.getElementById('match-search');
+    const detailMatchTime = document.getElementById('detail-match-time');
+    const detailMatchDate = document.getElementById('detail-match-date');
+    const detailMarkets = document.getElementById('detail-markets');
 
-    // Navigation to Detail View
-    matchCards.forEach(card => {
-        card.addEventListener('click', () => {
-            const home = card.getAttribute('data-home') || 'Ev Sahibi';
-            const away = card.getAttribute('data-away') || 'Deplasman';
+    // Helper: Show Status Message (Loading / Error)
+    function showStatus(text, type = 'loading') {
+        if (!statusMessage) return;
+        statusMessage.className = `status-message ${type}`;
+        if (type === 'loading') {
+            statusMessage.innerHTML = `<span class="spinner"></span> <span>${text}</span>`;
+        } else {
+            statusMessage.textContent = text;
+        }
+        statusMessage.classList.remove('hidden');
+    }
 
-            if (detailHomeTeam) detailHomeTeam.textContent = home;
-            if (detailAwayTeam) detailAwayTeam.textContent = away;
+    function hideStatus() {
+        if (!statusMessage) return;
+        statusMessage.classList.add('hidden');
+    }
 
-            mainView.classList.add('hidden');
-            detailView.classList.remove('hidden');
-            window.scrollTo(0, 0);
+    // Helper: Calculate Margin-Adjusted Implied Probability (1/odds with margin adjustment)
+    // Formula: Margin M = sum(1 / odds_i)
+    // Adjusted Probability P_i = (1 / odds_i) / M * 100%
+    function calculateProbabilities(outcomes) {
+        if (!outcomes || outcomes.length === 0) return [];
+        let totalImplied = 0;
+        const rawImplied = outcomes.map(o => {
+            const rawProb = o.price > 0 ? (1 / o.price) : 0;
+            totalImplied += rawProb;
+            return rawProb;
         });
-    });
 
-    // Navigation back to Main View
+        return outcomes.map((o, idx) => {
+            const adjustedProb = totalImplied > 0 ? (rawImplied[idx] / totalImplied) * 100 : 0;
+            return {
+                ...o,
+                probPercent: adjustedProb.toFixed(1)
+            };
+        });
+    }
+
+    // Fetch Matches for a league (markets=h2h,totals supported by list endpoint)
+    async function fetchLeagueMatches(leagueKey) {
+        const url = `${BASE_URL}/sports/${leagueKey}/odds/?apiKey=${API_KEY}&regions=eu&markets=h2h,totals&oddsFormat=decimal`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`API error HTTP ${response.status}`);
+        }
+        return await response.json();
+    }
+
+    // Fetch full event odds including BTTS when detail view is opened or per event
+    async function fetchEventDetails(sportKey, eventId) {
+        try {
+            const url = `${BASE_URL}/sports/${sportKey}/events/${eventId}/odds?apiKey=${API_KEY}&regions=eu&markets=h2h,totals,btts&oddsFormat=decimal`;
+            const response = await fetch(url);
+            if (!response.ok) return null;
+            return await response.json();
+        } catch (e) {
+            console.error('Failed to fetch event detail odds:', e);
+            return null;
+        }
+    }
+
+    // Extract best/first available markets across bookmakers for a match
+    function extractMarkets(match) {
+        const marketsResult = {
+            h2h: null,
+            totals: null,
+            btts: null
+        };
+
+        if (!match.bookmakers || match.bookmakers.length === 0) {
+            return marketsResult;
+        }
+
+        for (const bookmaker of match.bookmakers) {
+            if (!bookmaker.markets) continue;
+            for (const market of bookmaker.markets) {
+                if (market.key === 'h2h' && !marketsResult.h2h) {
+                    marketsResult.h2h = market.outcomes;
+                } else if (market.key === 'totals' && !marketsResult.totals) {
+                    marketsResult.totals = market.outcomes;
+                } else if (market.key === 'btts' && !marketsResult.btts) {
+                    marketsResult.btts = market.outcomes;
+                }
+            }
+        }
+
+        return marketsResult;
+    }
+
+    // Fetch All Real Matches on Load
+    async function loadAllMatches() {
+        showStatus('Gerçek oranlar yükleniyor...', 'loading');
+        matchesData = [];
+
+        try {
+            const results = await Promise.allSettled(
+                LEAGUES.map(league => fetchLeagueMatches(league.key))
+            );
+
+            let hasError = false;
+
+            results.forEach((res, idx) => {
+                const league = LEAGUES[idx];
+                if (res.status === 'fulfilled' && Array.isArray(res.value)) {
+                    res.value.forEach(item => {
+                        matchesData.push({
+                            ...item,
+                            leagueKey: league.key,
+                            leagueName: league.name
+                        });
+                    });
+                } else {
+                    console.error(`Error loading ${league.name}:`, res.reason);
+                    hasError = true;
+                }
+            });
+
+            if (matchesData.length === 0 && hasError) {
+                showStatus('Veri yüklenemedi', 'error');
+                return;
+            }
+
+            hideStatus();
+            renderMatches();
+        } catch (err) {
+            console.error('Failed to load odds data:', err);
+            showStatus('Veri yüklenemedi', 'error');
+        }
+    }
+
+    // Date Helper: Format date string ISO to local time & date
+    function parseMatchDateTime(commenceTimeStr) {
+        const dateObj = new Date(commenceTimeStr);
+        const timeStr = dateObj.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+        const dateStr = dateObj.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+        return { dateObj, timeStr, dateStr };
+    }
+
+    // Date Filter Logic
+    function isMatchInDateFilter(matchDateObj, filter) {
+        if (filter === 'all') return true;
+
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const targetDay = new Date(matchDateObj.getFullYear(), matchDateObj.getMonth(), matchDateObj.getDate());
+
+        const diffTime = targetDay.getTime() - today.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 3600 * 24));
+
+        if (filter === 'yesterday') return diffDays === -1;
+        if (filter === 'today') return diffDays === 0;
+        if (filter === 'tomorrow') return diffDays === 1;
+
+        return true;
+    }
+
+    // Render Match Cards into Main View
+    function renderMatches() {
+        LEAGUES.forEach(league => {
+            const listEl = document.getElementById(league.listId);
+            const sectionEl = document.getElementById(league.sectionId);
+            if (!listEl) return;
+
+            listEl.innerHTML = '';
+
+            const leagueMatches = matchesData.filter(m => m.leagueKey === league.key);
+            let visibleCount = 0;
+
+            leagueMatches.forEach(match => {
+                const { dateObj, timeStr, dateStr } = parseMatchDateTime(match.commence_time);
+
+                // Date Filter Check
+                if (!isMatchInDateFilter(dateObj, currentFilterDate)) {
+                    return;
+                }
+
+                // Search Filter Check
+                const homeName = match.home_team.toLowerCase();
+                const awayName = match.away_team.toLowerCase();
+                if (searchQuery && !homeName.includes(searchQuery) && !awayName.includes(searchQuery)) {
+                    return;
+                }
+
+                visibleCount++;
+
+                const card = document.createElement('div');
+                card.className = 'match-card';
+                card.dataset.id = match.id;
+
+                card.innerHTML = `
+                    <div class="match-time-status">
+                        <span class="match-time">${timeStr}</span>
+                        <span class="match-date-sub">${dateStr.slice(0, 5)}</span>
+                    </div>
+                    <div class="match-teams">
+                        <div class="team home-team">
+                            <span class="team-name" title="${match.home_team}">${match.home_team}</span>
+                        </div>
+                        <div class="match-vs">VS</div>
+                        <div class="team away-team">
+                            <span class="team-name" title="${match.away_team}">${match.away_team}</span>
+                        </div>
+                    </div>
+                    <div class="match-arrow">›</div>
+                `;
+
+                card.addEventListener('click', () => openMatchDetail(match));
+                listEl.appendChild(card);
+            });
+
+            if (visibleCount === 0) {
+                listEl.innerHTML = `<div class="empty-matches">Bu kriterlere uygun maç bulunamadı.</div>`;
+            }
+
+            if (sectionEl) {
+                sectionEl.style.display = 'flex';
+            }
+        });
+    }
+
+    // Open Match Detail View
+    async function openMatchDetail(match) {
+        const { timeStr, dateStr } = parseMatchDateTime(match.commence_time);
+
+        if (detailLeagueTag) detailLeagueTag.textContent = match.leagueName;
+        if (detailHomeTeam) detailHomeTeam.textContent = match.home_team;
+        if (detailAwayTeam) detailAwayTeam.textContent = match.away_team;
+        if (detailMatchTime) detailMatchTime.textContent = timeStr;
+        if (detailMatchDate) detailMatchDate.textContent = dateStr;
+
+        // Render initial available markets
+        renderDetailMarkets(match);
+
+        mainView.classList.add('hidden');
+        detailView.classList.remove('hidden');
+        window.scrollTo(0, 0);
+
+        // Fetch detailed event markets (including BTTS) in background if not already present
+        const detailedMatch = await fetchEventDetails(match.leagueKey, match.id);
+        if (detailedMatch && detailedMatch.bookmakers) {
+            renderDetailMarkets(detailedMatch);
+        }
+    }
+
+    // Render Markets and Implied Probabilities in Detail View
+    function renderDetailMarkets(match) {
+        if (!detailMarkets) return;
+        detailMarkets.innerHTML = '';
+
+        const markets = extractMarkets(match);
+
+        // 1. Maç Sonucu (1X2 / H2H)
+        renderH2HMarket(markets.h2h, match);
+
+        // 2. Alt / Üst 2.5 (Totals)
+        renderTotalsMarket(markets.totals);
+
+        // 3. Karşılıklı Gol Var/Yok (BTTS)
+        renderBTTSMarket(markets.btts);
+    }
+
+    function renderH2HMarket(h2hOutcomes, match) {
+        const card = document.createElement('div');
+        card.className = 'market-card';
+
+        if (!h2hOutcomes || h2hOutcomes.length === 0) {
+            card.innerHTML = `
+                <div class="market-title">Maç Sonucu (1X2)</div>
+                <div class="no-odds-msg">Oran verisi bulunamadı.</div>
+            `;
+            detailMarkets.appendChild(card);
+            return;
+        }
+
+        // Standardize Outcomes Order: Home, Draw, Away
+        let homeOutcome = h2hOutcomes.find(o => o.name === match.home_team);
+        let awayOutcome = h2hOutcomes.find(o => o.name === match.away_team);
+        let drawOutcome = h2hOutcomes.find(o => o.name === 'Draw' || o.name === 'Beraberlik');
+
+        const orderedOutcomes = [];
+        if (homeOutcome) orderedOutcomes.push({ label: '1 (Ev)', ...homeOutcome });
+        if (drawOutcome) orderedOutcomes.push({ label: 'X (Beraberlik)', ...drawOutcome });
+        if (awayOutcome) orderedOutcomes.push({ label: '2 (Dep)', ...awayOutcome });
+
+        const probs = calculateProbabilities(orderedOutcomes);
+
+        let gridHtml = probs.map(p => `
+            <div class="odd-card">
+                <span class="odd-label">${p.label}</span>
+                <span class="odd-value">${p.price ? p.price.toFixed(2) : '-'}</span>
+                <div class="prob-container">
+                    <span class="prob-value">%${p.probPercent}</span>
+                    <div class="prob-bar-bg">
+                        <div class="prob-bar-fill" style="width: ${p.probPercent}%"></div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        card.innerHTML = `
+            <div class="market-title">
+                <span>Maç Sonucu (1X2)</span>
+            </div>
+            <div class="odds-grid cols-3">
+                ${gridHtml}
+            </div>
+        `;
+
+        detailMarkets.appendChild(card);
+    }
+
+    function renderTotalsMarket(totalsOutcomes) {
+        const card = document.createElement('div');
+        card.className = 'market-card';
+
+        if (!totalsOutcomes || totalsOutcomes.length === 0) {
+            card.innerHTML = `
+                <div class="market-title">Alt / Üst (2.5 Gol)</div>
+                <div class="no-odds-msg">Oran verisi bulunamadı.</div>
+            `;
+            detailMarkets.appendChild(card);
+            return;
+        }
+
+        let overOutcome = totalsOutcomes.find(o => o.name === 'Over');
+        let underOutcome = totalsOutcomes.find(o => o.name === 'Under');
+
+        const orderedOutcomes = [];
+        if (overOutcome) orderedOutcomes.push({ label: `Üst ${overOutcome.point || 2.5}`, ...overOutcome });
+        if (underOutcome) orderedOutcomes.push({ label: `Alt ${underOutcome.point || 2.5}`, ...underOutcome });
+
+        const probs = calculateProbabilities(orderedOutcomes);
+
+        let gridHtml = probs.map(p => `
+            <div class="odd-card">
+                <span class="odd-label">${p.label}</span>
+                <span class="odd-value">${p.price ? p.price.toFixed(2) : '-'}</span>
+                <div class="prob-container">
+                    <span class="prob-value">%${p.probPercent}</span>
+                    <div class="prob-bar-bg">
+                        <div class="prob-bar-fill" style="width: ${p.probPercent}%"></div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        card.innerHTML = `
+            <div class="market-title">
+                <span>Alt / Üst Gol</span>
+            </div>
+            <div class="odds-grid cols-2">
+                ${gridHtml}
+            </div>
+        `;
+
+        detailMarkets.appendChild(card);
+    }
+
+    function renderBTTSMarket(bttsOutcomes) {
+        const card = document.createElement('div');
+        card.className = 'market-card';
+
+        if (!bttsOutcomes || bttsOutcomes.length === 0) {
+            card.innerHTML = `
+                <div class="market-title">Karşılıklı Gol (KG)</div>
+                <div class="no-odds-msg">Oran verisi bulunamadı.</div>
+            `;
+            detailMarkets.appendChild(card);
+            return;
+        }
+
+        let yesOutcome = bttsOutcomes.find(o => o.name === 'Yes');
+        let noOutcome = bttsOutcomes.find(o => o.name === 'No');
+
+        const orderedOutcomes = [];
+        if (yesOutcome) orderedOutcomes.push({ label: 'KG Var', ...yesOutcome });
+        if (noOutcome) orderedOutcomes.push({ label: 'KG Yok', ...noOutcome });
+
+        const probs = calculateProbabilities(orderedOutcomes);
+
+        let gridHtml = probs.map(p => `
+            <div class="odd-card">
+                <span class="odd-label">${p.label}</span>
+                <span class="odd-value">${p.price ? p.price.toFixed(2) : '-'}</span>
+                <div class="prob-container">
+                    <span class="prob-value">%${p.probPercent}</span>
+                    <div class="prob-bar-bg">
+                        <div class="prob-bar-fill" style="width: ${p.probPercent}%"></div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        card.innerHTML = `
+            <div class="market-title">
+                <span>Karşılıklı Gol (KG)</span>
+            </div>
+            <div class="odds-grid cols-2">
+                ${gridHtml}
+            </div>
+        `;
+
+        detailMarkets.appendChild(card);
+    }
+
+    // Navigation Back to Main View
     if (backBtn) {
         backBtn.addEventListener('click', () => {
             detailView.classList.add('hidden');
@@ -38,43 +448,28 @@ document.addEventListener('DOMContentLoaded', () => {
         tab.addEventListener('click', () => {
             dateTabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
+            currentFilterDate = tab.dataset.dateFilter || 'all';
+            renderMatches();
         });
     });
 
-    // Simple Search Filter
+    // Search Input Event
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase().trim();
-
-            matchCards.forEach(card => {
-                const home = (card.getAttribute('data-home') || '').toLowerCase();
-                const away = (card.getAttribute('data-away') || '').toLowerCase();
-
-                if (home.includes(query) || away.includes(query)) {
-                    card.style.display = 'flex';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-
-            // Hide/show league sections if all matches are hidden
-            document.querySelectorAll('.league-section').forEach(section => {
-                const visibleCards = section.querySelectorAll('.match-card[style="display: flex;"], .match-card:not([style*="display: none"])');
-                if (query !== '' && visibleCards.length === 0) {
-                    section.style.display = 'none';
-                } else {
-                    section.style.display = 'flex';
-                }
-            });
+            searchQuery = e.target.value.toLowerCase().trim();
+            renderMatches();
         });
     }
 
     // Register Service Worker for PWA
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
+            navigator.serviceWorker.register('./sw.js')
                 .then(reg => console.log('Service Worker registered successfully:', reg.scope))
                 .catch(err => console.log('Service Worker registration failed:', err));
         });
     }
+
+    // Initial Fetch on App Start
+    loadAllMatches();
 });

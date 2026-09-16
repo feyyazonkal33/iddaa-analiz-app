@@ -1,4 +1,4 @@
-const CACHE_NAME = 'iddaa-analiz-v1';
+const CACHE_NAME = 'iddaa-analiz-v2';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -14,7 +14,6 @@ self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                console.log('[Service Worker] Caching app assets');
                 return cache.addAll(ASSETS_TO_CACHE);
             })
             .then(() => self.skipWaiting())
@@ -28,7 +27,6 @@ self.addEventListener('activate', (event) => {
             return Promise.all(
                 cacheNames.map((cache) => {
                     if (cache !== CACHE_NAME) {
-                        console.log('[Service Worker] Clearing old cache:', cache);
                         return caches.delete(cache);
                     }
                 })
@@ -37,8 +35,15 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Fetch Event (Cache First strategy for offline access)
+// Fetch Event (Network First for API requests, Cache First for static assets)
 self.addEventListener('fetch', (event) => {
+    if (event.request.url.includes('api.the-odds-api.com')) {
+        event.respondWith(
+            fetch(event.request).catch(() => caches.match(event.request))
+        );
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request)
             .then((cachedResponse) => {
