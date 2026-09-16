@@ -64,8 +64,13 @@
                 <!-- Süper Lig Section -->
                 <section class="league-section" id="league-super-league" data-league="Süper Lig">
                     <div class="league-header">
-                        <span class="league-flag">🇹🇷</span>
-                        <h2 class="league-title">Süper Lig</h2>
+                        <div class="league-header-left">
+                            <span class="league-flag">🇹🇷</span>
+                            <h2 class="league-title">Süper Lig</h2>
+                        </div>
+                        <button class="standings-btn" data-league-id="203" data-league-name="Süper Lig">
+                            📊 Puan Durumu
+                        </button>
                     </div>
                     <div class="match-list" id="super-league-list">
                         <!-- Dynamic match cards loaded here -->
@@ -75,8 +80,13 @@
                 <!-- Bundesliga Section -->
                 <section class="league-section" id="league-bundesliga" data-league="Bundesliga">
                     <div class="league-header">
-                        <span class="league-flag">🇩🇪</span>
-                        <h2 class="league-title">Bundesliga</h2>
+                        <div class="league-header-left">
+                            <span class="league-flag">🇩🇪</span>
+                            <h2 class="league-title">Bundesliga</h2>
+                        </div>
+                        <button class="standings-btn" data-league-id="78" data-league-name="Bundesliga">
+                            📊 Puan Durumu
+                        </button>
                     </div>
                     <div class="match-list" id="bundesliga-list">
                         <!-- Dynamic match cards loaded here -->
@@ -115,6 +125,38 @@
 
                 <div id="detail-markets" class="detail-markets-container">
                     <!-- Dynamic markets loaded here -->
+                </div>
+            </main>
+        </div>
+
+        <!-- Standings Modal View -->
+        <div id="standings-view" class="view hidden">
+            <header class="app-header standings-header">
+                <button id="standings-back-btn" class="back-btn" aria-label="Geri Dön">
+                    ← Geri
+                </button>
+                <h1 class="app-title" id="standings-title">Puan Durumu</h1>
+                <div style="width: 40px;"></div>
+            </header>
+            <main class="standings-content">
+                <div id="standings-status" class="status-message hidden"></div>
+                <div class="standings-table-container">
+                    <table class="standings-table">
+                        <thead>
+                            <tr>
+                                <th class="col-rank">#</th>
+                                <th class="col-team">Takım</th>
+                                <th class="col-num">O</th>
+                                <th class="col-num">G</th>
+                                <th class="col-num">B</th>
+                                <th class="col-num">M</th>
+                                <th class="col-num">P</th>
+                            </tr>
+                        </thead>
+                        <tbody id="standings-tbody">
+                            <!-- Dynamic standings rows loaded here -->
+                        </tbody>
+                    </table>
                 </div>
             </main>
         </div>
