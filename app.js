@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // API-Football Configuration
     const FOOTBALL_API_BASE_URL = 'https://v3.football.api-sports.io';
-    const DEFAULT_FOOTBALL_API_KEY = '5150a62c1cb4d607dd93d6ddad6ff0c';
+    const DEFAULT_FOOTBALL_API_KEY = '04fbc6e6f1916a40d2d1ef6458945170';
     const FOOTBALL_API_KEY_STORAGE_KEY = 'FOOTBALL_API_KEY';
     const LEAGUE_SUPER_LIG_ID = 203;
     const LEAGUE_BUNDESLIGA_ID = 78;
@@ -143,7 +143,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const result = await response.json();
             if (result && result.errors && Object.keys(result.errors).length > 0) {
+                const errMsgs = JSON.stringify(result.errors);
                 console.error('API-Football Live Matches API Error:', result.errors);
+                if (errMsgs.toLowerCase().includes('missing application key')) {
+                    console.warn('FALLBACK VERİ KULLANILIYOR');
+                }
             }
 
             if (result && result.response) {
@@ -222,34 +226,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // API-Football: Fetch Standings directly for active season without caching
     async function fetchLeagueStandings(leagueId) {
-        const season = getCurrentSeason();
-        try {
-            const apiKey = getFootballApiKey();
-            const url = `${FOOTBALL_API_BASE_URL}/standings?league=${leagueId}&season=${season}`;
-            const response = await fetch(url, {
-                headers: {
-                    'x-apisports-key': apiKey
+        const seasonsToTry = [getCurrentSeason(), 2024, 2023, 2022];
+        const uniqueSeasons = [...new Set(seasonsToTry)];
+
+        for (const season of uniqueSeasons) {
+            try {
+                const apiKey = getFootballApiKey();
+                const url = `${FOOTBALL_API_BASE_URL}/standings?league=${leagueId}&season=${season}`;
+                const response = await fetch(url, {
+                    headers: {
+                        'x-apisports-key': apiKey
+                    }
+                });
+
+                if (!response.ok) {
+                    console.error(`API-Football standings error for league ${leagueId} (season ${season}): HTTP status ${response.status}`);
+                    continue;
                 }
-            });
 
-            if (!response.ok) {
-                console.error(`API-Football standings error for league ${leagueId}: HTTP status ${response.status}`);
-                throw new Error(`API-Football error HTTP ${response.status}`);
-            }
-
-            const result = await response.json();
-            if (result && result.errors && Object.keys(result.errors).length > 0) {
-                console.error(`API-Football Standings API Error for league ${leagueId} (season ${season}):`, result.errors);
-            }
-
-            if (result && result.response && result.response.length > 0) {
-                const standingsData = result.response[0].league.standings[0];
-                if (standingsData && standingsData.length > 0) {
-                    return standingsData;
+                const result = await response.json();
+                if (result && result.errors) {
+                    const errorKeys = Object.keys(result.errors);
+                    if (errorKeys.length > 0) {
+                        const errMsgs = JSON.stringify(result.errors);
+                        console.warn(`API-Football Standings API notice for league ${leagueId} (season ${season}):`, result.errors);
+                        if (errMsgs.toLowerCase().includes('missing application key')) {
+                            console.warn('FALLBACK VERİ KULLANILIYOR');
+                        }
+                    }
                 }
+
+                if (result && result.response && result.response.length > 0 && result.response[0].league && result.response[0].league.standings) {
+                    const standingsGroups = result.response[0].league.standings;
+                    if (Array.isArray(standingsGroups) && standingsGroups.length > 0) {
+                        const standingsData = standingsGroups[0];
+                        if (standingsData && standingsData.length > 0) {
+                            // Deduplicate teams if necessary
+                            const seenTeams = new Set();
+                            const deduplicated = standingsData.filter(row => {
+                                const id = row.team ? (row.team.id || row.team.name) : null;
+                                if (!id || seenTeams.has(id)) return false;
+                                seenTeams.add(id);
+                                return true;
+                            });
+                            return deduplicated;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error(`Error fetching standings for season ${season} league ${leagueId}:`, e);
             }
-        } catch (e) {
-            console.error(`Error fetching standings for season ${season} league ${leagueId}:`, e);
         }
 
         // Return static fallback standings if API key fails or returns error
@@ -257,6 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getFallbackStandings(leagueId) {
+        console.warn('FALLBACK VERİ KULLANILIYOR');
         if (leagueId === LEAGUE_SUPER_LIG_ID) {
             return [
                 { rank: 1, team: { name: 'Galatasaray' }, all: { played: 26, win: 21, draw: 4, lose: 1 }, goalsDiff: 38, points: 67 },
@@ -276,8 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 { rank: 15, team: { name: 'Çaykur Rizespor' }, all: { played: 26, win: 7, draw: 6, lose: 13 }, goalsDiff: -14, points: 27 },
                 { rank: 16, team: { name: 'Kayserispor' }, all: { played: 26, win: 6, draw: 8, lose: 12 }, goalsDiff: -15, points: 26 },
                 { rank: 17, team: { name: 'Bodrum FK' }, all: { played: 26, win: 6, draw: 6, lose: 14 }, goalsDiff: -16, points: 24 },
-                { rank: 18, team: { name: 'Hatayspor' }, all: { played: 26, win: 3, draw: 10, lose: 13 }, goalsDiff: -20, points: 19 },
-                { rank: 19, team: { name: 'Adana Demirspor' }, all: { played: 26, win: 2, draw: 3, lose: 21 }, goalsDiff: -35, points: 9 }
+                { rank: 18, team: { name: 'Hatayspor' }, all: { played: 26, win: 3, draw: 10, lose: 13 }, goalsDiff: -20, points: 19 }
             ];
         } else if (leagueId === LEAGUE_BUNDESLIGA_ID) {
             return [
