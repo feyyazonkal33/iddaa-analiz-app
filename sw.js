@@ -1,4 +1,4 @@
-const CACHE_NAME = 'iddaa-analiz-v2';
+const CACHE_NAME = 'iddaa-analiz-v3';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -37,7 +37,7 @@ self.addEventListener('activate', (event) => {
 
 // Fetch Event (Network First for API requests, Cache First for static assets)
 self.addEventListener('fetch', (event) => {
-    if (event.request.url.includes('api.the-odds-api.com')) {
+    if (event.request.url.includes('api.the-odds-api.com') || event.request.url.includes('football.api-sports.io')) {
         event.respondWith(
             fetch(event.request).catch(() => caches.match(event.request))
         );

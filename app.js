@@ -1,7 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Clear residual cached standings data on app initialization
-    localStorage.clear();
-
     // API Configuration
     const DEFAULT_API_KEY = '16e175a2a4a2b63d98edeeb7b904df27';
     const API_KEY_STORAGE_KEY = 'ODDS_API_KEY';
@@ -9,7 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // API-Football Configuration
     const FOOTBALL_API_BASE_URL = 'https://v3.football.api-sports.io';
-    const FOOTBALL_API_KEY = '5150a62c1cb4d607dd93d6ddad6ff0c';
+    const DEFAULT_FOOTBALL_API_KEY = '5150a62c1cb4d607dd93d6ddad6ff0c';
+    const FOOTBALL_API_KEY_STORAGE_KEY = 'FOOTBALL_API_KEY';
     const LEAGUE_SUPER_LIG_ID = 203;
     const LEAGUE_BUNDESLIGA_ID = 78;
 
@@ -25,6 +23,19 @@ document.addEventListener('DOMContentLoaded', () => {
         return (savedKey && savedKey.trim() !== '') ? savedKey.trim() : DEFAULT_API_KEY;
     }
 
+    function getFootballApiKey() {
+        const savedKey = localStorage.getItem(FOOTBALL_API_KEY_STORAGE_KEY);
+        return (savedKey && savedKey.trim() !== '') ? savedKey.trim() : DEFAULT_FOOTBALL_API_KEY;
+    }
+
+    function getCurrentSeason() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        // European football seasons start in summer (month 7 onwards)
+        return month >= 7 ? year : year - 1;
+    }
+
     // App State
     let matchesData = []; // Store fetched matches across leagues
     let liveMatchesMap = new Map(); // Map key: "home_team|away_team" -> live match obj
@@ -32,6 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let liveAutoRefreshTimer = null;
     let currentFilterDate = 'today';
     let searchQuery = '';
+    let currentStandingsLeagueId = null;
+    let currentStandingsLeagueName = '';
+    let currentBaseStandings = null;
 
     // DOM Elements
     const mainView = document.getElementById('main-view');
@@ -48,6 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const apiKeyInput = document.getElementById('api-key-input');
     const saveApiKeyBtn = document.getElementById('save-api-key-btn');
     const apiKeyStatus = document.getElementById('api-key-status');
+    const footballApiKeyInput = document.getElementById('football-api-key-input');
+    const saveFootballApiKeyBtn = document.getElementById('save-football-api-key-btn');
+    const footballApiKeyStatus = document.getElementById('football-api-key-status');
     const refreshDataBtn = document.getElementById('refresh-data-btn');
 
     const statusMessage = document.getElementById('status-message');
@@ -111,21 +128,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // API-Football: Fetch Live Matches fresh from API without caching
     async function fetchLiveMatches() {
         try {
+            const apiKey = getFootballApiKey();
             const url = `${FOOTBALL_API_BASE_URL}/fixtures?live=all`;
             const response = await fetch(url, {
                 headers: {
-                    'x-apisports-key': FOOTBALL_API_KEY
+                    'x-apisports-key': apiKey
                 }
             });
 
             if (!response.ok) {
+                console.error(`API-Football live matches error: HTTP status ${response.status}`);
                 throw new Error(`API-Football error HTTP ${response.status}`);
             }
 
             const result = await response.json();
+            if (result && result.errors && Object.keys(result.errors).length > 0) {
+                console.error('API-Football Live Matches API Error:', result.errors);
+            }
+
             if (result && result.response) {
                 processLiveMatchesData(result.response);
             }
+            refreshActiveStandingsIfOpen();
         } catch (err) {
             console.error('Failed to fetch live matches:', err);
         }
@@ -196,21 +220,28 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
-    // API-Football: Fetch Standings directly for active season 2026 without caching
+    // API-Football: Fetch Standings directly for active season without caching
     async function fetchLeagueStandings(leagueId) {
+        const season = getCurrentSeason();
         try {
-            const url = `${FOOTBALL_API_BASE_URL}/standings?league=${leagueId}&season=2026`;
+            const apiKey = getFootballApiKey();
+            const url = `${FOOTBALL_API_BASE_URL}/standings?league=${leagueId}&season=${season}`;
             const response = await fetch(url, {
                 headers: {
-                    'x-apisports-key': FOOTBALL_API_KEY
+                    'x-apisports-key': apiKey
                 }
             });
 
             if (!response.ok) {
+                console.error(`API-Football standings error for league ${leagueId}: HTTP status ${response.status}`);
                 throw new Error(`API-Football error HTTP ${response.status}`);
             }
 
             const result = await response.json();
+            if (result && result.errors && Object.keys(result.errors).length > 0) {
+                console.error(`API-Football Standings API Error for league ${leagueId} (season ${season}):`, result.errors);
+            }
+
             if (result && result.response && result.response.length > 0) {
                 const standingsData = result.response[0].league.standings[0];
                 if (standingsData && standingsData.length > 0) {
@@ -218,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         } catch (e) {
-            console.error(`Error fetching standings for season 2026 league ${leagueId}:`, e);
+            console.error(`Error fetching standings for season ${season} league ${leagueId}:`, e);
         }
 
         // Return static fallback standings if API key fails or returns error
@@ -723,8 +754,17 @@ document.addEventListener('DOMContentLoaded', () => {
             isLive: false
         }));
 
-        // Check active live matches for this leagueId
+        // Deduplicate live matches by unique match id (or unique reference)
+        const uniqueLiveMatchesMap = new Map();
         liveMatchesMap.forEach(liveMatch => {
+            const key = liveMatch.id || `${liveMatch.homeTeam}|${liveMatch.awayTeam}`;
+            if (!uniqueLiveMatchesMap.has(key)) {
+                uniqueLiveMatchesMap.set(key, liveMatch);
+            }
+        });
+
+        // Check active live matches for this leagueId
+        uniqueLiveMatchesMap.forEach(liveMatch => {
             if (liveMatch.leagueId !== leagueId) return;
 
             const homeNorm = normalizeTeamName(liveMatch.homeTeam);
@@ -807,8 +847,20 @@ document.addEventListener('DOMContentLoaded', () => {
         return standingsCopy;
     }
 
+    // Refresh active standings view if open
+    function refreshActiveStandingsIfOpen() {
+        if (currentStandingsLeagueId && currentBaseStandings && standingsView && !standingsView.classList.contains('hidden')) {
+            const liveStandings = computeLiveStandings(currentBaseStandings, currentStandingsLeagueId);
+            renderStandingsTable(liveStandings);
+        }
+    }
+
     // Open Standings View
     async function openStandingsView(leagueId, leagueName) {
+        currentStandingsLeagueId = leagueId;
+        currentStandingsLeagueName = leagueName;
+        currentBaseStandings = null;
+
         if (standingsTitle) {
             standingsTitle.textContent = `${leagueName} Puan Durumu`;
         }
@@ -837,6 +889,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            currentBaseStandings = baseStandings;
             const liveStandings = computeLiveStandings(baseStandings, leagueId);
             renderStandingsTable(liveStandings);
         } catch (err) {
@@ -933,6 +986,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (standingsBackBtn) {
         standingsBackBtn.addEventListener('click', () => {
+            currentStandingsLeagueId = null;
+            currentBaseStandings = null;
             if (standingsView) standingsView.classList.add('hidden');
             mainView.classList.remove('hidden');
             window.scrollTo(0, 0);
@@ -959,6 +1014,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (apiKeyStatus) {
             apiKeyStatus.classList.add('hidden');
+        }
+        if (footballApiKeyInput) {
+            footballApiKeyInput.value = getFootballApiKey();
+        }
+        if (footballApiKeyStatus) {
+            footballApiKeyStatus.classList.add('hidden');
         }
         mainView.classList.add('hidden');
         detailView.classList.add('hidden');
@@ -1001,6 +1062,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 apiKeyStatus.textContent = 'API Key başarıyla kaydedildi.';
                 apiKeyStatus.className = 'form-help-text success';
                 apiKeyStatus.classList.remove('hidden');
+            }
+        });
+    }
+
+    if (saveFootballApiKeyBtn && footballApiKeyInput) {
+        saveFootballApiKeyBtn.addEventListener('click', () => {
+            const newKey = footballApiKeyInput.value.trim();
+            if (!newKey) {
+                if (footballApiKeyStatus) {
+                    footballApiKeyStatus.textContent = 'Lütfen geçerli bir API Key giriniz.';
+                    footballApiKeyStatus.className = 'form-help-text error';
+                    footballApiKeyStatus.classList.remove('hidden');
+                }
+                return;
+            }
+
+            localStorage.setItem(FOOTBALL_API_KEY_STORAGE_KEY, newKey);
+            if (footballApiKeyStatus) {
+                footballApiKeyStatus.textContent = 'API-Football Key başarıyla kaydedildi.';
+                footballApiKeyStatus.className = 'form-help-text success';
+                footballApiKeyStatus.classList.remove('hidden');
             }
         });
     }
