@@ -1,0 +1,2 @@
+# iddaa-analiz-app
+analiz
