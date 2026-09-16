@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0b132b">
+    <meta name="description" content="İddaa Analiz Progressive Web App">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>İddaa Analiz</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app" class="app-container">
+        <!-- Main List View -->
+        <div id="main-view" class="view active">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="logo-area">
+                    <span class="logo-icon">⚽</span>
+                    <h1 class="app-title">İddaa Analiz</h1>
+                </div>
+                <div class="header-actions">
+                    <button class="live-btn" aria-label="Canlı Maçlar">
+                        <span class="live-dot"></span>
+                        CANLI
+                    </button>
+                    <button class="icon-btn settings-btn" aria-label="Ayarlar">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Navigation Controls -->
+            <div class="nav-controls">
+                <!-- Date Tabs -->
+                <div class="date-tabs">
+                    <button class="date-tab">Dün</button>
+                    <button class="date-tab active">Bugün</button>
+                    <button class="date-tab">Yarın</button>
+                </div>
+
+                <!-- Search Input -->
+                <div class="search-box">
+                    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="match-search" placeholder="Takım veya maç ara..." aria-label="Takım veya maç ara">
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <main class="matches-content">
+                <!-- Süper Lig Section -->
+                <section class="league-section" data-league="Süper Lig">
+                    <div class="league-header">
+                        <span class="league-flag">🇹🇷</span>
+                        <h2 class="league-title">Süper Lig</h2>
+                    </div>
+                    <div class="match-list">
+                        <div class="match-card" data-match-id="1" data-home="Galatasaray" data-away="Fenerbahçe">
+                            <div class="match-time-status">
+                                <span class="match-time">19:00</span>
+                                <span class="match-badge">MS</span>
+                            </div>
+                            <div class="match-teams">
+                                <div class="team home-team">
+                                    <span class="team-name">Galatasaray</span>
+                                </div>
+                                <div class="match-vs">VS</div>
+                                <div class="team away-team">
+                                    <span class="team-name">Fenerbahçe</span>
+                                </div>
+                            </div>
+                            <div class="match-arrow">›</div>
+                        </div>
+
+                        <div class="match-card" data-match-id="2" data-home="Beşiktaş" data-away="Trabzonspor">
+                            <div class="match-time-status">
+                                <span class="match-time">21:30</span>
+                                <span class="match-badge">Yakında</span>
+                            </div>
+                            <div class="match-teams">
+                                <div class="team home-team">
+                                    <span class="team-name">Beşiktaş</span>
+                                </div>
+                                <div class="match-vs">VS</div>
+                                <div class="team away-team">
+                                    <span class="team-name">Trabzonspor</span>
+                                </div>
+                            </div>
+                            <div class="match-arrow">›</div>
+                        </div>
+
+                        <div class="match-card" data-match-id="3" data-home="Başakşehir" data-away="Adana Demirspor">
+                            <div class="match-time-status">
+                                <span class="match-time">16:00</span>
+                                <span class="match-badge">MS</span>
+                            </div>
+                            <div class="match-teams">
+                                <div class="team home-team">
+                                    <span class="team-name">Başakşehir</span>
+                                </div>
+                                <div class="match-vs">VS</div>
+                                <div class="team away-team">
+                                    <span class="team-name">Adana Demirspor</span>
+                                </div>
+                            </div>
+                            <div class="match-arrow">›</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Bundesliga Section -->
+                <section class="league-section" data-league="Bundesliga">
+                    <div class="league-header">
+                        <span class="league-flag">🇩🇪</span>
+                        <h2 class="league-title">Bundesliga</h2>
+                    </div>
+                    <div class="match-list">
+                        <div class="match-card" data-match-id="4" data-home="Bayern München" data-away="Borussia Dortmund">
+                            <div class="match-time-status">
+                                <span class="match-time">18:30</span>
+                                <span class="match-badge">MS</span>
+                            </div>
+                            <div class="match-teams">
+                                <div class="team home-team">
+                                    <span class="team-name">Bayern München</span>
+                                </div>
+                                <div class="match-vs">VS</div>
+                                <div class="team away-team">
+                                    <span class="team-name">Borussia Dortmund</span>
+                                </div>
+                            </div>
+                            <div class="match-arrow">›</div>
+                        </div>
+
+                        <div class="match-card" data-match-id="5" data-home="RB Leipzig" data-away="Bayer Leverkusen">
+                            <div class="match-time-status">
+                                <span class="match-time">20:30</span>
+                                <span class="match-badge">Yakında</span>
+                            </div>
+                            <div class="match-teams">
+                                <div class="team home-team">
+                                    <span class="team-name">RB Leipzig</span>
+                                </div>
+                                <div class="match-vs">VS</div>
+                                <div class="team away-team">
+                                    <span class="team-name">Bayer Leverkusen</span>
+                                </div>
+                            </div>
+                            <div class="match-arrow">›</div>
+                        </div>
+
+                        <div class="match-card" data-match-id="6" data-home="Eintracht Frankfurt" data-away="VfB Stuttgart">
+                            <div class="match-time-status">
+                                <span class="match-time">15:30</span>
+                                <span class="match-badge">MS</span>
+                            </div>
+                            <div class="match-teams">
+                                <div class="team home-team">
+                                    <span class="team-name">Eintracht Frankfurt</span>
+                                </div>
+                                <div class="match-vs">VS</div>
+                                <div class="team away-team">
+                                    <span class="team-name">VfB Stuttgart</span>
+                                </div>
+                            </div>
+                            <div class="match-arrow">›</div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- Match Detail View Placeholder -->
+        <div id="detail-view" class="view hidden">
+            <header class="app-header detail-header">
+                <button id="back-btn" class="back-btn" aria-label="Geri Dön">
+                    ← Geri
+                </button>
+                <h1 class="app-title">Maç Detayı</h1>
+                <div style="width: 40px;"></div> <!-- spacer for header balance -->
+            </header>
+            <main class="detail-content">
+                <div class="detail-placeholder-card">
+                    <div id="detail-teams-headline" class="detail-headline">
+                        <span id="detail-home-team">Ev Sahibi</span>
+                        <span class="vs-badge">VS</span>
+                        <span id="detail-away-team">Deplasman</span>
+                    </div>
+                    <div class="detail-info">
+                        <p class="placeholder-text">Detaylı analiz verileri ve istatistikler sonraki aşamada eklenecektir.</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
