@@ -224,8 +224,124 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
-    // API-Football: Fetch Standings directly for active season without caching
+    // TFF Unofficial API Scraper approach for Süper Lig Standings
+    async function fetchTffSuperLigStandings() {
+        const corsProxies = [
+            'https://api.allorigins.win/raw?url=',
+            'https://corsproxy.io/?'
+        ];
+
+        let htmlText = null;
+
+        // Try direct fetch first (works in environments without CORS restrictions e.g. WebView / PWA / extension / same-origin)
+        try {
+            const response = await fetch('https://www.tff.org/default.aspx?pageID=198');
+            if (response.ok) {
+                const buffer = await response.arrayBuffer();
+                const decoder = new TextDecoder('windows-1254');
+                htmlText = decoder.decode(buffer);
+            }
+        } catch (directErr) {
+            console.warn('Direct TFF fetch skipped due to CORS/network, trying proxy fallback...');
+        }
+
+        // Try CORS proxies if direct fetch failed or threw CORS exception
+        if (!htmlText) {
+            const targetUrl = encodeURIComponent('https://www.tff.org/default.aspx?pageID=198');
+            for (const proxyPrefix of corsProxies) {
+                try {
+                    const proxyUrl = `${proxyPrefix}${targetUrl}`;
+                    const response = await fetch(proxyUrl);
+                    if (response.ok) {
+                        const text = await response.text();
+                        if (text && text.includes('s-table')) {
+                            htmlText = text;
+                            break;
+                        }
+                    }
+                } catch (pErr) {
+                    // Try next proxy
+                }
+            }
+        }
+
+        if (!htmlText) {
+            console.warn('FALLBACK VERİ KULLANILIYOR');
+            return getFallbackStandings(LEAGUE_SUPER_LIG_ID);
+        }
+
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlText, 'text/html');
+            const table = doc.querySelector('table.s-table');
+            if (!table) {
+                throw new Error('TFF score table not found');
+            }
+
+            const rows = table.querySelectorAll('tr');
+            const standings = [];
+
+            rows.forEach(row => {
+                const cols = row.querySelectorAll('td');
+                if (cols.length < 9) return;
+
+                const rawTeamInfo = cols[0].textContent.trim();
+                if (!rawTeamInfo) return;
+
+                let rank = 0;
+                let teamName = rawTeamInfo;
+                const dotIdx = rawTeamInfo.indexOf('.');
+                if (dotIdx !== -1 && !isNaN(rawTeamInfo.substring(0, dotIdx))) {
+                    rank = parseInt(rawTeamInfo.substring(0, dotIdx), 10);
+                    teamName = rawTeamInfo.substring(dotIdx + 1).trim();
+                }
+
+                if (!rank && !teamName) return;
+
+                const played = parseInt(cols[1].textContent.trim(), 10) || 0;
+                const win = parseInt(cols[2].textContent.trim(), 10) || 0;
+                const draw = parseInt(cols[3].textContent.trim(), 10) || 0;
+                const lose = parseInt(cols[4].textContent.trim(), 10) || 0;
+                const goalsFor = parseInt(cols[5].textContent.trim(), 10) || 0;
+                const goalsAgainst = parseInt(cols[6].textContent.trim(), 10) || 0;
+                const goalsDiff = parseInt(cols[7].textContent.trim(), 10) || 0;
+                const points = parseInt(cols[8].textContent.trim(), 10) || 0;
+
+                standings.push({
+                    rank,
+                    team: { name: teamName },
+                    all: {
+                        played,
+                        win,
+                        draw,
+                        lose,
+                        goals: {
+                            for: goalsFor,
+                            against: goalsAgainst
+                        }
+                    },
+                    goalsDiff,
+                    points
+                });
+            });
+
+            if (standings.length === 0) {
+                throw new Error('No standings parsed from TFF');
+            }
+
+            return standings;
+        } catch (e) {
+            console.error('Error fetching TFF Süper Lig standings:', e);
+            return getFallbackStandings(LEAGUE_SUPER_LIG_ID);
+        }
+    }
+
+    // Fetch Standings: Route Süper Lig to TFF scraper, Bundesliga to API-Football
     async function fetchLeagueStandings(leagueId) {
+        if (leagueId === LEAGUE_SUPER_LIG_ID) {
+            return await fetchTffSuperLigStandings();
+        }
+
         const seasonsToTry = [getCurrentSeason(), 2024, 2023, 2022];
         const uniqueSeasons = [...new Set(seasonsToTry)];
 
