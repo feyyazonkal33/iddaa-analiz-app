@@ -9,9 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const DEFAULT_FOOTBALL_API_KEY = '04fbc6e6f1916a40d2d1ef6458945170';
     const FOOTBALL_API_KEY_STORAGE_KEY = 'FOOTBALL_API_KEY';
 
-    // Claude API Configuration
-    const CLAUDE_API_KEY_STORAGE_KEY = 'CLAUDE_API_KEY';
-    const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
+    // Gemini API Configuration
+    const GEMINI_API_KEY_STORAGE_KEY = 'gemini_api_key';
     const SYSTEM_PROMPT = "Sen jenerik bir asistan değilsin — tam bir usta bahisçi karaktersin. Deneyimli, kendinden emin, doğrudan konuşan bir bahis analisti gibi cevap ver. Her soruya bahis/analiz zihniyetiyle yaklaş.";
     const LEAGUE_SUPER_LIG_ID = 203;
     const LEAGUE_BUNDESLIGA_ID = 78;
@@ -33,8 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return (savedKey && savedKey.trim() !== '') ? savedKey.trim() : DEFAULT_FOOTBALL_API_KEY;
     }
 
-    function getClaudeApiKey() {
-        const savedKey = localStorage.getItem(CLAUDE_API_KEY_STORAGE_KEY);
+    function getGeminiApiKey() {
+        const savedKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
         return (savedKey && savedKey.trim() !== '') ? savedKey.trim() : '';
     }
 
@@ -75,9 +74,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const footballApiKeyInput = document.getElementById('football-api-key-input');
     const saveFootballApiKeyBtn = document.getElementById('save-football-api-key-btn');
     const footballApiKeyStatus = document.getElementById('football-api-key-status');
-    const claudeApiKeyInput = document.getElementById('claude-api-key-input');
-    const saveClaudeApiKeyBtn = document.getElementById('save-claude-api-key-btn');
-    const claudeApiKeyStatus = document.getElementById('claude-api-key-status');
+    const geminiApiKeyInput = document.getElementById('gemini-api-key-input');
+    const saveGeminiApiKeyBtn = document.getElementById('save-gemini-api-key-btn');
+    const geminiApiKeyStatus = document.getElementById('gemini-api-key-status');
     const refreshDataBtn = document.getElementById('refresh-data-btn');
 
     // Voice Assistant Elements
@@ -219,23 +218,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (saveClaudeApiKeyBtn && claudeApiKeyInput) {
-        saveClaudeApiKeyBtn.addEventListener('click', () => {
-            const newKey = claudeApiKeyInput.value.trim();
+    if (saveGeminiApiKeyBtn && geminiApiKeyInput) {
+        saveGeminiApiKeyBtn.addEventListener('click', () => {
+            const newKey = geminiApiKeyInput.value.trim();
             if (!newKey) {
-                if (claudeApiKeyStatus) {
-                    claudeApiKeyStatus.textContent = 'Lütfen geçerli bir API Key giriniz.';
-                    claudeApiKeyStatus.className = 'form-help-text error';
-                    claudeApiKeyStatus.classList.remove('hidden');
+                if (geminiApiKeyStatus) {
+                    geminiApiKeyStatus.textContent = 'Lütfen geçerli bir API Key giriniz.';
+                    geminiApiKeyStatus.className = 'form-help-text error';
+                    geminiApiKeyStatus.classList.remove('hidden');
                 }
                 return;
             }
 
-            localStorage.setItem(CLAUDE_API_KEY_STORAGE_KEY, newKey);
-            if (claudeApiKeyStatus) {
-                claudeApiKeyStatus.textContent = 'Claude API Key başarıyla kaydedildi.';
-                claudeApiKeyStatus.className = 'form-help-text success';
-                claudeApiKeyStatus.classList.remove('hidden');
+            localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, newKey);
+            if (geminiApiKeyStatus) {
+                geminiApiKeyStatus.textContent = 'Gemini API Key başarıyla kaydedildi.';
+                geminiApiKeyStatus.className = 'form-help-text success';
+                geminiApiKeyStatus.classList.remove('hidden');
             }
         });
     }
@@ -1207,11 +1206,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (footballApiKeyStatus) {
             footballApiKeyStatus.classList.add('hidden');
         }
-        if (claudeApiKeyInput) {
-            claudeApiKeyInput.value = getClaudeApiKey();
+        if (geminiApiKeyInput) {
+            geminiApiKeyInput.value = getGeminiApiKey();
         }
-        if (claudeApiKeyStatus) {
-            claudeApiKeyStatus.classList.add('hidden');
+        if (geminiApiKeyStatus) {
+            geminiApiKeyStatus.classList.add('hidden');
         }
         mainView.classList.add('hidden');
         detailView.classList.add('hidden');
@@ -1305,7 +1304,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // Voice Assistant (Web Speech & Claude Integration)
+    // Voice Assistant (Web Speech & Gemini Integration)
     // ==========================================
     let recognition = null;
     let isRecording = false;
@@ -1436,42 +1435,41 @@ document.addEventListener('DOMContentLoaded', () => {
         showVoiceStatus('Usta bahisçi düşünüyor...');
 
         try {
-            const claudeApiKey = getClaudeApiKey();
+            const geminiApiKey = getGeminiApiKey();
             let assistantReply = '';
 
-            if (claudeApiKey) {
-                // Direct Call to Claude API
-                const response = await fetch(CLAUDE_API_URL, {
+            if (geminiApiKey) {
+                // Direct Call to Gemini API
+                const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+                const response = await fetch(GEMINI_API_URL, {
                     method: 'POST',
                     headers: {
-                        'x-api-key': claudeApiKey,
-                        'anthropic-version': '2023-06-01',
-                        'content-type': 'application/json',
-                        'dangerously-allow-browser': 'true'
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: 'claude-3-5-sonnet-20241022',
-                        max_tokens: 500,
-                        system: SYSTEM_PROMPT,
-                        messages: [
-                            { role: 'user', content: transcript }
-                        ]
+                        contents: [{
+                            parts: [
+                                { text: SYSTEM_PROMPT },
+                                { text: transcript }
+                            ]
+                        }]
                     })
                 });
 
                 if (!response.ok) {
                     const errData = await response.json().catch(() => ({}));
-                    console.error('Claude API Error:', response.status, errData);
-                    throw new Error(`Claude API HTTP ${response.status}`);
+                    console.error('Gemini API Error:', response.status, errData);
+                    throw new Error(`Gemini API HTTP ${response.status}`);
                 }
 
                 const data = await response.json();
-                if (data && data.content && data.content.length > 0) {
-                    assistantReply = data.content.map(item => item.text || '').join('\n');
+                if (data && data.candidates && data.candidates.length > 0) {
+                    const parts = data.candidates[0].content.parts;
+                    assistantReply = parts.map(part => part.text || '').join('\n');
                 }
             } else {
                 // Key not configured, give informative persona fallback message
-                assistantReply = "Bak dostum, bahis analisti konuşuyor: Ayarlar menüsünden Claude API Key'ini tanımlamadığın için canlı Claude analizi yapamıyorum. Ama unutma, kupon yaparken her zaman disiplin ve oran analizi şarttır!";
+                assistantReply = "Bak dostum, bahis analisti konuşuyor: Ayarlar menüsünden Gemini API Key'ini tanımlamadığın için canlı analiz yapamıyorum. Ama unutma, kupon yaparken her zaman disiplin ve oran analizi şarttır!";
             }
 
             hideVoiceStatus();
